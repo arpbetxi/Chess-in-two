@@ -28,6 +28,21 @@
     };
   }
 
+  // Servidores TURN de Metered si están configurados en config.js (si no, null)
+  function fetchIceServers() {
+    const cfg = root.AJEDREZ_CONFIG || {};
+    if (!cfg.meteredApp || !cfg.meteredApiKey) return Promise.resolve(null);
+    const url = 'https://' + cfg.meteredApp + '.metered.live/api/v1/turn/credentials?apiKey=' +
+      encodeURIComponent(cfg.meteredApiKey);
+    return fetch(url)
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (list) { return Array.isArray(list) && list.length ? list : null; })
+      .catch(function (e) {
+        console.warn('No se pudieron obtener los servidores TURN de Metered:', e);
+        return null;
+      });
+  }
+
   const Net = {
     peer: null,
     conn: null,
@@ -35,6 +50,9 @@
     code: null,
     ready: false, // true cuando la sala está registrada en el servidor
     _timer: null,
+    _connTimer: null,
+    _gen: 0,       // evita que respuestas antiguas afecten a una conexión nueva
+    usingTurn: false,
     handlers: {}, // onStatus(text, ok), onData(msg), onConnected(), onDisconnected(), onError(text)
 
     _emit: function (name) {
@@ -45,6 +63,7 @@
     _watchConn: function (conn) {
       const self = this;
       conn.on('open', function () {
+        clearTimeout(self._connTimer);
         self.conn = conn;
         self._emit('onConnected');
       });
@@ -53,7 +72,7 @@
         if (self.conn === conn) self.conn = null;
         self._emit('onDisconnected');
       });
-      conn.on('error', function (err) { self._emit('onError', 'Error de conexión: ' + err.type); });
+      conn.on('error', function (err) { self._emit('onError', self._friendlyError(err)); });
     },
 
     // Comprueba que la librería está cargada y avisa si el servidor no responde
@@ -82,6 +101,7 @@
         'socket-closed': 'Se ha cortado la conexión con el servidor de PeerJS.',
         'browser-incompatible': 'Este navegador no permite conexiones directas. Prueba con Chrome, Firefox o Safari actualizados.',
         'webrtc': 'No se ha podido establecer la conexión directa entre los dos navegadores (puede que la red la bloquee).',
+        'negotiation-failed': 'No se ha podido establecer la conexión entre los dos navegadores (puede que la red la bloquee).',
       };
       return msgs[err.type] || ('Error de conexión: ' + err.type);
     },
@@ -101,8 +121,24 @@
       this.role = 'host';
       this.code = code || randomCode();
       if (!this._start('Creando sala…')) return;
-      this.peer = new Peer(PREFIX + this.code, peerOptions());
+      const gen = this._gen;
+      fetchIceServers().then(function (ice) {
+        if (gen !== self._gen) return;
+        self._createPeer(PREFIX + self.code, ice);
+        self._setupHost();
+      });
+    },
+
+    _createPeer: function (id, ice) {
+      const opts = peerOptions();
+      this.usingTurn = !!ice;
+      if (ice) opts.config = { iceServers: ice };
+      this.peer = id ? new Peer(id, opts) : new Peer(opts);
       this._keepAlive();
+    },
+
+    _setupHost: function () {
+      const self = this;
       this.peer.on('open', function () {
         self.ready = true;
         self._emit('onStatus', 'Sala ' + self.code + ': esperando a tu rival…', false);
@@ -129,12 +165,30 @@
       this.role = 'guest';
       this.code = code.trim().toUpperCase();
       if (!this._start('Conectando con la sala ' + this.code + '…')) return;
-      this.peer = new Peer(undefined, peerOptions());
-      this._keepAlive();
+      const gen = this._gen;
+      fetchIceServers().then(function (ice) {
+        if (gen !== self._gen) return;
+        self._createPeer(null, ice);
+        self._setupGuest();
+      });
+    },
+
+    _setupGuest: function () {
+      const self = this;
       this.peer.on('open', function () {
         self.ready = true;
         const conn = self.peer.connect(PREFIX + self.code, { reliable: true });
         self._watchConn(conn);
+        // Si la conexión directa no se abre, avisamos en vez de quedarnos colgados
+        self._connTimer = setTimeout(function () {
+          if (!self.isConnected()) {
+            self._emit('onError', 'La sala existe, pero no se ha podido conectar con el navegador del anfitrión. ' +
+              'Suele pasar cuando la red bloquea la conexión directa (datos móviles, wifis de universidad). ' +
+              (self.usingTurn
+                ? 'Prueba con otra red.'
+                : 'Configura el servidor TURN gratuito en config.js para solucionarlo.'));
+          }
+        }, 20000);
       });
       this.peer.on('error', function (err) {
         if (err.type === 'peer-unavailable') {
@@ -152,7 +206,9 @@
     isConnected: function () { return !!(this.conn && this.conn.open); },
 
     close: function () {
+      this._gen++;
       clearTimeout(this._timer);
+      clearTimeout(this._connTimer);
       this.ready = false;
       if (this.conn) { try { this.conn.close(); } catch (e) { /* nada */ } }
       if (this.peer) { try { this.peer.destroy(); } catch (e) { /* nada */ } }
