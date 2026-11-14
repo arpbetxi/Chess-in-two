@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ajedrez con cartas</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Ajedrez con cartas</h1>
+    <div class="header-buttons">
+      <span id="netStatus" class="net-status hidden"></span>
+      <button id="menuBtn" class="secondary">Menú</button>
+      <button id="flipBtn" class="secondary" title="Girar la vista del tablero">Girar vista</button>
+      <button id="newGameBtn" class="secondary">Nueva partida</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="board-wrap">
+      <div id="board" class="board" aria-label="Tablero"></div>
+    </section>
+
+    <aside class="panel">
+      <div id="turn" class="turn"></div>
+
+      <div class="card-area">
+        <div class="deck">
+          <div class="deck-back"><span id="deckCount">60</span></div>
+          <button id="drawBtn">Robar carta</button>
+        </div>
+        <div id="cardView" class="card-slot"></div>
+      </div>
+
+      <p id="instructions" class="instructions"></p>
+
+      <div class="captured">
+        <h3>Capturadas</h3>
+        <div class="captured-row"><span class="label">Blancas:</span><div id="captured-w" class="captured-list"></div></div>
+        <div class="captured-row"><span class="label">Negras:</span><div id="captured-b" class="captured-list"></div></div>
+      </div>
+
+      <details class="rules">
+        <summary>Reglas rápidas</summary>
+        <ul>
+          <li>Cada turno robas una carta. Los números (1, 2, 3) son movimientos obligatorios; puedes mover la misma pieza varias veces.</li>
+          <li>Las cartas especiales ocupan todo el turno.</li>
+          <li>No hay jaque: se gana capturando el rey rival.</li>
+          <li>Si te quedan movimientos y no puedes mover ninguna pieza: tablas por ahogado.</li>
+          <li>Enroque, coronación y captura al paso funcionan como en el ajedrez (sin restricciones de jaque).</li>
+        </ul>
+      </details>
+
+      <div class="log">
+        <h3>Registro</h3>
+        <ol id="log"></ol>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Menú inicial: online o local -->
+  <div id="lobby" class="modal">
+    <div class="modal-box lobby-box">
+      <p>Ajedrez con cartas</p>
+      <button id="hostBtn">Crear partida online</button>
+      <div class="join-row">
+        <input id="joinCode" maxlength="6" placeholder="Código" autocomplete="off">
+        <button id="joinBtn">Unirse</button>
+      </div>
+      <button id="localBtn" class="secondary">Jugar en este ordenador</button>
+      <div id="lobbyStatus" class="lobby-status"></div>
+      <button id="lobbyClose" class="secondary hidden">Volver a la partida</button>
+    </div>
+  </div>
+
+  <!-- Elegir pieza al coronar -->
+  <div id="promoModal" class="modal hidden">
+    <div class="modal-box">
+      <p>¿En qué pieza corona el peón?</p>
+      <div id="promoChoices" class="promo-choices"></div>
+    </div>
+  </div>
+
+  <!-- Fin de partida -->
+  <div id="overModal" class="modal hidden">
+    <div class="modal-box">
+      <p id="overText"></p>
+      <button id="overNewGame">Nueva partida</button>
+      <button id="overClose" class="secondary">Ver tablero</button>
+    </div>
+  </div>
+
+  <script src="lib/peerjs.min.js"></script>
+  <script src="engine.js"></script>
+  <script src="net.js"></script>
+  <script src="ui.js"></script>
+</body>
+</html>
