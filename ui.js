@@ -6,6 +6,7 @@
  *  - local: los dos jugadores en el mismo ordenador.
  *  - host:  creas la sala online. Tu navegador guarda la partida y aplica las reglas (Jugador 1).
  *  - guest: te unes con un código. Envías tus acciones al anfitrión y recibes la partida (Jugador 2).
+ *  - bot:   juegas contra el ordenador (tú eres el Jugador 1, el bot el Jugador 2).
  */
 (function () {
   'use strict';
@@ -16,8 +17,13 @@
   const CARD_SYMBOLS = { bloqueo: '⊘', color: '◐', mas2: '+2', mas4: '+4', sentido: '⟲' };
   const SAVE_KEY = 'ajedrezCartas.partidaOnline';
 
+  const BOT_PLAYER = 2;
+  const BOT_DELAY = 650;    // pausa entre acciones del bot, para que se vea lo que hace
+
   let state = Engine.newGame();
-  let mode = null;          // 'local' | 'host' | 'guest'
+  let mode = null;          // 'local' | 'host' | 'guest' | 'bot'
+  let botLevel = 'normal';
+  let botTimer = null;
   let myPlayer = null;      // 1 o 2 en modo online
   let selected = null;      // [r, c] de la pieza seleccionada
   let selMoves = [];        // movimientos posibles de esa pieza
@@ -34,12 +40,13 @@
   function canAct() {
     if (!mode || state.phase === 'over') return false;
     if (mode === 'local') return true;
+    if (mode === 'bot') return state.current === myPlayer;
     return Net.isConnected() && state.current === myPlayer;
   }
 
   function isFlipped() {
     // Abajo va tu color (online) o el del Jugador 1 (local). Con "Cambio de sentido" el tablero gira.
-    const bottomPlayer = online() ? myPlayer : 1;
+    const bottomPlayer = online() || mode === 'bot' ? myPlayer : 1;
     return (state.playerColor[bottomPlayer] === 'b') !== manualFlip;
   }
 
@@ -141,6 +148,7 @@
     turn.appendChild(dot);
     let turnText = state.phase === 'over' ? 'Partida terminada' : 'Turno: ' + Engine.playerLabel(state, state.current);
     if (online() && state.phase !== 'over') turnText += state.current === myPlayer ? ' — tú' : ' — rival';
+    if (mode === 'bot' && state.phase !== 'over') turnText += state.current === myPlayer ? ' — tú' : ' — bot';
     turn.appendChild(document.createTextNode(turnText));
 
     // Mazo y carta
@@ -167,9 +175,15 @@
     if (!mode) {
       text = 'Elige en el menú cómo quieres jugar.';
     } else if (state.phase === 'over') {
-      text = state.result.type === 'win'
-        ? '¡Gana Jugador ' + state.result.player + '! (' + state.result.reason + ')'
-        : 'Tablas. ' + state.result.reason + '.';
+      if (state.result.type !== 'win') {
+        text = 'Tablas. ' + state.result.reason + '.';
+      } else if (mode === 'local') {
+        text = '¡Gana Jugador ' + state.result.player + '! (' + state.result.reason + ')';
+      } else if (state.result.player === myPlayer) {
+        text = '¡Has ganado! (' + state.result.reason + ')';
+      } else {
+        text = (mode === 'bot' ? 'Gana el bot' : 'Gana tu rival') + ' (' + state.result.reason + ')';
+      }
     } else if (online() && !Net.isConnected()) {
       if (mode === 'host') {
         text = Net.ready
@@ -178,12 +192,14 @@
       } else {
         text = 'Sin conexión con la sala. Abre el menú para reconectar.';
       }
+    } else if (!active && mode === 'bot') {
+      text = 'El bot está pensando…';
     } else if (!active) {
       text = 'Turno de tu rival. Espera a que juegue…';
     } else {
       switch (state.phase) {
         case 'draw':
-          text = (online() ? 'Te toca' : 'Jugador ' + state.current) + ': roba una carta.';
+          text = (mode === 'local' ? 'Jugador ' + state.current : 'Te toca') + ': roba una carta.';
           break;
         case 'moves':
           text = 'Te ' + (state.movesLeft === 1 ? 'queda 1 movimiento' : 'quedan ' + state.movesLeft + ' movimientos') +
@@ -259,6 +275,23 @@
       shownOver = false;
       $('overModal').classList.add('hidden');
     }
+    scheduleBot();
+  }
+
+  // ---------- Bot ----------
+  function scheduleBot() {
+    if (mode !== 'bot' || state.phase === 'over' || state.current !== BOT_PLAYER || botTimer) return;
+    botTimer = setTimeout(function () {
+      botTimer = null;
+      if (mode !== 'bot' || state.phase === 'over' || state.current !== BOT_PLAYER) return;
+      const action = Bot.nextAction(state, botLevel);
+      if (action && applyAction(action, BOT_PLAYER)) afterAction();
+    }, BOT_DELAY);
+  }
+
+  function stopBot() {
+    clearTimeout(botTimer);
+    botTimer = null;
   }
 
   // ---------- Acciones ----------
@@ -293,6 +326,7 @@
       return;
     }
     const player = mode === 'local' ? state.current : myPlayer;
+    if (action.type === 'newGame') stopBot();
     if (applyAction(action, player)) {
       shareState();
       afterAction();
@@ -428,6 +462,7 @@
   };
 
   $('hostBtn').addEventListener('click', function () {
+    stopBot();
     const saved = loadSave();
     let code = null;
     state = Engine.newGame();
@@ -450,6 +485,7 @@
       lobbyStatus('El código tiene 6 caracteres.', true);
       return;
     }
+    stopBot();
     mode = 'guest';
     myPlayer = 2;
     manualFlip = false;
@@ -459,8 +495,22 @@
   $('joinBtn').addEventListener('click', join);
   $('joinCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') join(); });
 
+  $('botBtn').addEventListener('click', function () {
+    Net.close();
+    stopBot();
+    mode = 'bot';
+    myPlayer = 1;
+    botLevel = $('botLevel').value;
+    manualFlip = false;
+    state = Engine.newGame();
+    lobbyStatus('');
+    hideLobby();
+    afterAction();
+  });
+
   $('localBtn').addEventListener('click', function () {
     Net.close();
+    stopBot();
     mode = 'local';
     myPlayer = null;
     manualFlip = false;

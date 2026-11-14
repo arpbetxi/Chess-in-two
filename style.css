@@ -294,6 +294,16 @@ button.cap-piece.chosen { border-color: #2f9e62; background: #2c5040; }
   background: #1e2126;
   color: var(--text);
 }
+.bot-row { display: flex; gap: 8px; }
+.bot-row button { flex: 1; }
+.bot-row select {
+  font: inherit;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background: #1e2126;
+  color: var(--text);
+}
 .lobby-status { min-height: 1.4em; font-size: 0.95rem; color: var(--muted); line-height: 1.4; }
 .lobby-status .code { font-size: 1.8rem; font-weight: 800; letter-spacing: 0.15em; color: var(--text); display: block; margin: 6px 0; }
 .lobby-status.error { color: #ff8f86; }

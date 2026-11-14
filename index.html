@@ -71,6 +71,13 @@
         <input id="joinCode" maxlength="6" placeholder="Código" autocomplete="off">
         <button id="joinBtn">Unirse</button>
       </div>
+      <div class="bot-row">
+        <button id="botBtn">Jugar contra el bot</button>
+        <select id="botLevel" aria-label="Dificultad del bot">
+          <option value="facil">Fácil</option>
+          <option value="normal" selected>Normal</option>
+        </select>
+      </div>
       <button id="localBtn" class="secondary">Jugar en este ordenador</button>
       <div id="lobbyStatus" class="lobby-status"></div>
       <button id="lobbyClose" class="secondary hidden">Volver a la partida</button>
@@ -104,6 +111,7 @@
   <script src="config.js"></script>
   <script src="engine.js"></script>
   <script src="net.js"></script>
+  <script src="bot.js"></script>
   <script src="ui.js"></script>
 </body>
 </html>

@@ -9,11 +9,13 @@ Variante de ajedrez en la que cada turno se roba una carta que decide cuántos m
 - `engine.js`: todas las reglas. `DECK_SPEC`, al principio del archivo, define la composición del mazo.
 - `ui.js`: el tablero, los clics y el menú.
 - `net.js`: la conexión online entre dos navegadores.
+- `bot.js`: el bot para jugar en solitario (dificultad Fácil o Normal).
 - `config.js`: claves opcionales del servidor TURN (ver abajo).
 - `lib/peerjs.min.js`: la librería PeerJS (licencia MIT, en `lib/peerjs-LICENSE`).
 
 ## Jugar
 
+- **Contra el bot:** elige "Jugar contra el bot" y la dificultad.
 - **En el mismo ordenador:** abre `index.html` y elige "Jugar en este ordenador".
 - **Online:** publica la carpeta (por ejemplo, en GitHub Pages). Uno pulsa "Crear partida online" y comparte el código de 6 letras; el otro lo escribe y pulsa "Unirse".
 
