@@ -11,9 +11,9 @@
   // ---------- Mazo ----------
   // Composición del reglamento (60 cartas). Cambia los números para equilibrar.
   const DECK_SPEC = [
-    { kind: 'num', n: 1, count: 20 },
-    { kind: 'num', n: 2, count: 16 },
-    { kind: 'num', n: 3, count: 10 },
+    { kind: 'num', n: 1, count: 30 },
+    { kind: 'num', n: 2, count: 12 },
+    { kind: 'num', n: 3, count: 4 },
     { kind: 'bloqueo', count: 4 },
     { kind: 'color', count: 4 },   // Cambio de color: conviertes 1 pieza rival
     { kind: 'mas2', count: 3 },    // +2: revives hasta 2 piezas tuyas
@@ -38,10 +38,10 @@
 
   function cardDescription(card) {
     switch (card.kind) {
-      case 'num': return 'Haces ' + cardName(card) + ' seguidos.';
+      case 'num': return 'Haces ' + cardName(card) + ' seguidos. Si capturas, el turno termina.';
       case 'bloqueo': return 'Pierdes el turno.';
       case 'color': return 'Conviertes 1 pieza rival (no el rey).';
-      case 'mas2': return 'Revives hasta 2 piezas capturadas de tu color.';
+      case 'mas2': return 'Revives hasta 2 piezas capturadas de tu color en tu mitad del tablero.';
       case 'mas4': return 'Conviertes hasta 4 piezas rivales (no el rey).';
       case 'sentido': return 'Se gira el tablero: los jugadores intercambian colores.';
     }
@@ -382,6 +382,11 @@
       finish(state, { type: 'win', player: state.current, reason: 'Rey capturado' });
       return true;
     }
+    if (captured && state.movesLeft > 0) {
+      // Regla: una captura termina el turno aunque queden movimientos
+      addLog(state, '✋ La captura termina el turno.');
+      state.movesLeft = 0;
+    }
     if (state.movesLeft === 0) endTurn(state);
     else checkStalemate(state);
     return true;
@@ -409,6 +414,9 @@
     if (state.phase !== 'revive') return false;
     if (!inside(r, c) || state.board[r][c]) return false;
     if (type === 'p' && (r === 0 || r === 7)) return false;
+    // Solo en tu mitad del tablero: filas 1-4 para blancas, 5-8 para negras
+    const mine = myColor(state);
+    if (mine === 'w' ? r < 4 : r > 3) return false;
     return true;
   }
 
