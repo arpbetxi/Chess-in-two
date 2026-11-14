@@ -31,6 +31,16 @@
   // Servidores TURN de Metered si están configurados en config.js (si no, null)
   function fetchIceServers() {
     const cfg = root.AJEDREZ_CONFIG || {};
+    if (cfg.turnUsername && cfg.turnCredential) {
+      const auth = { username: cfg.turnUsername, credential: cfg.turnCredential };
+      return Promise.resolve([
+        { urls: 'stun:stun.relay.metered.ca:80' },
+        Object.assign({ urls: 'turn:global.relay.metered.ca:80' }, auth),
+        Object.assign({ urls: 'turn:global.relay.metered.ca:80?transport=tcp' }, auth),
+        Object.assign({ urls: 'turn:global.relay.metered.ca:443' }, auth),
+        Object.assign({ urls: 'turns:global.relay.metered.ca:443?transport=tcp' }, auth),
+      ]);
+    }
     if (!cfg.meteredApp || !cfg.meteredApiKey) return Promise.resolve(null);
     const url = 'https://' + cfg.meteredApp + '.metered.live/api/v1/turn/credentials?apiKey=' +
       encodeURIComponent(cfg.meteredApiKey);
