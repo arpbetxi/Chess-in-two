@@ -12,6 +12,7 @@
     <h1>Ajedrez con cartas</h1>
     <div class="header-buttons">
       <span id="netStatus" class="net-status hidden"></span>
+      <button id="infoBtn" class="info-btn" title="Manual: reglas y cartas" aria-label="Abrir el manual">i</button>
       <button id="menuBtn" class="secondary">Menú</button>
       <button id="flipBtn" class="secondary" title="Girar la vista del tablero">Girar vista</button>
       <button id="newGameBtn" class="secondary">Nueva partida</button>
@@ -42,18 +43,7 @@
         <div class="captured-row"><span class="label">Negras:</span><div id="captured-b" class="captured-list"></div></div>
       </div>
 
-      <details class="rules">
-        <summary>Reglas rápidas</summary>
-        <ul>
-          <li>Cada turno robas una carta. Los números (1, 2, 3) son movimientos obligatorios; puedes mover la misma pieza varias veces.</li>
-          <li>Si capturas una pieza, tu turno termina aunque te queden movimientos.</li>
-          <li>Las cartas especiales ocupan todo el turno. Las piezas revividas van en tu mitad del tablero.</li>
-          <li>+4 Ruleta: 4 piezas rivales al azar (nunca el rey) pasan a tu bando.</li>
-          <li>No hay jaque: se gana capturando el rey rival.</li>
-          <li>Si te quedan movimientos y no puedes mover ninguna pieza: tablas por ahogado.</li>
-          <li>Enroque, coronación y captura al paso funcionan como en el ajedrez (sin restricciones de jaque).</li>
-        </ul>
-      </details>
+      <button id="panelManualBtn" class="secondary manual-link">¿Cómo se juega? Ver el manual</button>
 
       <div class="log">
         <h3>Registro</h3>
@@ -79,8 +69,61 @@
         </select>
       </div>
       <button id="localBtn" class="secondary">Jugar en este ordenador</button>
+      <button id="lobbyManualBtn" class="link-btn">¿Primera vez? Lee el manual</button>
       <div id="lobbyStatus" class="lobby-status"></div>
       <button id="lobbyClose" class="secondary hidden">Volver a la partida</button>
+    </div>
+  </div>
+
+  <!-- Manual -->
+  <div id="manualModal" class="modal manual-modal hidden" role="dialog" aria-labelledby="manualTitle">
+    <div class="modal-box manual-box">
+      <div class="manual-head">
+        <h2 id="manualTitle">Manual</h2>
+        <button id="manualClose" class="close-btn" aria-label="Cerrar el manual">✕</button>
+      </div>
+
+      <section>
+        <h3>Objetivo</h3>
+        <p>Se juega con las piezas y movimientos del ajedrez, pero <strong>gana quien captura el rey rival</strong>. No existe el jaque ni el jaque mate: puedes dejar tu rey expuesto, pero si el rival lo captura, pierdes.</p>
+      </section>
+
+      <section>
+        <h3>Cómo es un turno</h3>
+        <ol>
+          <li>Pulsa <strong>Robar carta</strong>.</li>
+          <li>Si es un <strong>número</strong>, haces ese número de movimientos seguidos. Puedes mover la misma pieza varias veces.</li>
+          <li>Si <strong>capturas</strong> una pieza, tu turno termina aunque te queden movimientos.</li>
+          <li>Si es una <strong>carta especial</strong>, se aplica su efecto y ese es todo tu turno.</li>
+        </ol>
+        <p class="hint">Para mover: pulsa una de tus piezas y después la casilla de destino. Los puntos marcan dónde puedes ir y los círculos rojos, qué puedes capturar.</p>
+      </section>
+
+      <section>
+        <h3>Las cartas</h3>
+        <p class="hint">El mazo tiene <span id="manualDeckTotal">60</span> cartas. Cuando se acaba, se baraja el descarte.</p>
+        <div id="manualCards" class="manual-cards"></div>
+      </section>
+
+      <section>
+        <h3>Reglas de ajedrez que cambian</h3>
+        <ul>
+          <li><strong>Enroque:</strong> como siempre (rey y torre sin mover, casillas libres), pero se puede enrocar aunque haya casillas atacadas.</li>
+          <li><strong>Coronación:</strong> un peón que llega al final corona al momento y eliges la pieza.</li>
+          <li><strong>Captura al paso:</strong> solo con tu primer movimiento del turno, justo después del avance doble del peón rival.</li>
+          <li><strong>Ahogado:</strong> si te quedan movimientos y ninguna de tus piezas puede moverse, la partida acaba en tablas.</li>
+          <li>Las piezas convertidas o revividas cuentan como ya movidas: no pueden enrocar ni avanzar dos casillas.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>Modos de juego</h3>
+        <ul>
+          <li><strong>Online:</strong> uno pulsa "Crear partida online" y comparte el código de 6 letras; el otro lo escribe y pulsa "Unirse". Quien crea la sala no debe cerrar su pestaña.</li>
+          <li><strong>Contra el bot:</strong> eliges la dificultad (Fácil o Normal) y juegas como Jugador 1.</li>
+          <li><strong>En este ordenador:</strong> los dos jugadores se turnan en la misma pantalla.</li>
+        </ul>
+      </section>
     </div>
   </div>
 

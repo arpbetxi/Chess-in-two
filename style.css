@@ -186,6 +186,12 @@ main {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 .card .sym { font-size: 2.6rem; font-weight: 800; line-height: 1.1; }
+.card .art { width: 66px; height: 66px; display: block; }
+.card.fresh { animation: card-in 0.35s ease-out; }
+@keyframes card-in {
+  from { transform: rotateY(90deg) scale(0.85); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
 .card .name { font-size: 0.75rem; font-weight: 600; margin-top: 4px; }
 .card.num { background: linear-gradient(160deg, #2f7dbf, #1f5a8c); }
 .card.bloqueo { background: linear-gradient(160deg, #c2453c, #8e2a24); }
@@ -264,8 +270,13 @@ button.cap-piece.chosen { border-color: #2f9e62; background: #2c5040; }
 @media (max-width: 700px) {
   :root { --sq: 11.4vw; }
   main { padding: 10px; gap: 14px; }
-  header { padding: 10px; }
+  header { padding: 10px; flex-wrap: wrap; row-gap: 8px; }
   header h1 { font-size: 1.05rem; }
+  .header-buttons { flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+  .header-buttons button { padding: 6px 10px; font-size: 0.85rem; }
+  .info-btn { width: 32px; height: 32px; }
+  .manual-box { padding: 0 16px 16px; }
+  .manual-cards { grid-template-columns: 1fr; }
 }
 
 /* ---------- Online ---------- */
@@ -308,3 +319,70 @@ button.cap-piece.chosen { border-color: #2f9e62; background: #2c5040; }
 .lobby-status .code { font-size: 1.8rem; font-weight: 800; letter-spacing: 0.15em; color: var(--text); display: block; margin: 6px 0; }
 .lobby-status.error { color: #ff8f86; }
 .board.waiting { opacity: 0.85; }
+
+/* ---------- Manual ---------- */
+.info-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  font-style: italic;
+  font-size: 1.15rem;
+}
+.link-btn {
+  background: none;
+  color: var(--accent);
+  padding: 4px;
+  text-decoration: underline;
+}
+.manual-link { width: 100%; }
+.manual-modal { z-index: 20; }
+.manual-box {
+  width: min(720px, 94vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  text-align: left;
+  gap: 4px;
+  padding: 0 24px 24px;
+}
+.manual-head {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 8px;
+  border-bottom: 1px solid #3a404a;
+  z-index: 1;
+}
+.manual-head h2 { margin: 0; font-size: 1.4rem; }
+.close-btn {
+  background: #444b56;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1rem;
+}
+.manual-box section { padding-top: 10px; }
+.manual-box h3 { margin: 10px 0 6px; font-size: 1.05rem; color: var(--text); }
+.manual-box p, .manual-box li { line-height: 1.5; font-size: 0.95rem; }
+.manual-box p { margin: 0 0 6px; font-weight: 400; }
+.manual-box ol, .manual-box ul { margin: 0; padding-left: 20px; }
+.manual-box .hint { color: var(--muted); font-size: 0.88rem; }
+.manual-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-top: 8px; }
+.manual-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #343a43;
+  border-radius: 10px;
+  padding: 10px;
+}
+.manual-card .card { flex-shrink: 0; }
+.manual-card h4 { margin: 0 0 4px; font-size: 1rem; }
+.manual-card .copies { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+.manual-card p { margin: 0; }

@@ -14,7 +14,27 @@
   // Glifos rellenos para los dos colores; el color se da con CSS.
   // ︎ pide la versión de texto (evita que el peón salga como emoji).
   const GLYPHS = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟︎' };
-  const CARD_SYMBOLS = { bloqueo: '⊘', color: '◐', mas2: '+2', mas4: '+4', sentido: '⟲' };
+  // Ilustraciones de las cartas especiales (carpeta cards/). Para cambiarlas, sustituye los archivos.
+  const CARD_ART = {
+    bloqueo: 'cards/bloqueo.svg',
+    color: 'cards/color.svg',
+    mas2: 'cards/mas2.svg',
+    mas4: 'cards/mas4.svg',
+    sentido: 'cards/sentido.svg',
+  };
+  // Explicación más detallada de cada carta para el manual
+  const MANUAL_TEXT = {
+    num: function (n) {
+      return 'Haces ' + (n === 1 ? '1 movimiento' : n + ' movimientos seguidos') +
+        '. Si capturas una pieza, el turno termina antes.';
+    },
+    bloqueo: 'Pierdes el turno: no mueves nada.',
+    color: 'Eliges una pieza rival (cualquiera menos el rey) y pasa a ser tuya en la misma casilla.',
+    mas2: 'Revives hasta 2 de tus piezas capturadas y las colocas en casillas vacías de tu mitad del tablero (tus cuatro primeras filas). Los peones no pueden ir en la primera fila.',
+    mas4: 'Ruleta: se eligen al azar 4 piezas rivales (nunca el rey) y pasan a tu bando. Puede tocar un peón… o la dama.',
+    sentido: 'Se gira el tablero: los jugadores intercambian colores. Quien llevaba blancas pasa a llevar negras, con sus piezas y capturas.',
+  };
+  let lastDeckSize = null;  // para animar solo las cartas recién robadas
   const SAVE_KEY = 'ajedrezCartas.partidaOnline';
 
   const BOT_PLAYER = 2;
@@ -65,13 +85,21 @@
   function cardElement(card, faded) {
     const el = document.createElement('div');
     el.className = 'card ' + card.kind + (faded ? ' faded' : '');
-    const sym = document.createElement('div');
-    sym.className = 'sym';
-    sym.textContent = card.kind === 'num' ? String(card.n) : CARD_SYMBOLS[card.kind];
+    if (card.kind === 'num') {
+      const sym = document.createElement('div');
+      sym.className = 'sym';
+      sym.textContent = String(card.n);
+      el.appendChild(sym);
+    } else {
+      const img = document.createElement('img');
+      img.className = 'art';
+      img.src = CARD_ART[card.kind];
+      img.alt = '';
+      el.appendChild(img);
+    }
     const name = document.createElement('div');
     name.className = 'name';
     name.textContent = Engine.cardName(card);
-    el.appendChild(sym);
     el.appendChild(name);
     return el;
   }
@@ -156,14 +184,21 @@
     $('drawBtn').disabled = !(active && state.phase === 'draw');
     const slot = $('cardView');
     slot.innerHTML = '';
+    // La carta recién robada entra con una pequeña animación
+    const isNew = lastDeckSize !== null && state.deck.length !== lastDeckSize;
+    lastDeckSize = state.deck.length;
     if (state.card) {
-      slot.appendChild(cardElement(state.card, false));
+      const ce = cardElement(state.card, false);
+      if (isNew) ce.classList.add('fresh');
+      slot.appendChild(ce);
       const cap = document.createElement('div');
       cap.className = 'card-caption';
       cap.textContent = Engine.cardDescription(state.card);
       slot.appendChild(cap);
     } else if (state.lastCard) {
-      slot.appendChild(cardElement(state.lastCard.card, true));
+      const ce = cardElement(state.lastCard.card, true);
+      if (isNew) ce.classList.add('fresh');
+      slot.appendChild(ce);
       const cap = document.createElement('div');
       cap.className = 'card-caption';
       cap.textContent = 'Última carta: Jugador ' + state.lastCard.player;
@@ -525,6 +560,46 @@
     showLobby();
   });
   $('lobbyClose').addEventListener('click', hideLobby);
+
+  // ---------- Manual ----------
+  function buildManual() {
+    const box = $('manualCards');
+    box.innerHTML = '';
+    let total = 0;
+    for (const spec of Engine.DECK_SPEC) {
+      total += spec.count;
+      const card = spec.kind === 'num' ? { kind: 'num', n: spec.n } : { kind: spec.kind };
+      const item = document.createElement('div');
+      item.className = 'manual-card';
+      item.appendChild(cardElement(card, false));
+      const info = document.createElement('div');
+      const h = document.createElement('h4');
+      h.textContent = Engine.cardName(card);
+      const p = document.createElement('p');
+      p.textContent = card.kind === 'num' ? MANUAL_TEXT.num(card.n) : MANUAL_TEXT[card.kind];
+      const copies = document.createElement('div');
+      copies.className = 'copies';
+      copies.textContent = spec.count + (spec.count === 1 ? ' carta' : ' cartas') + ' en el mazo';
+      info.appendChild(h);
+      info.appendChild(p);
+      info.appendChild(copies);
+      item.appendChild(info);
+      box.appendChild(item);
+    }
+    $('manualDeckTotal').textContent = total;
+  }
+  function openManual() { $('manualModal').classList.remove('hidden'); $('manualClose').focus(); }
+  function closeManual() { $('manualModal').classList.add('hidden'); }
+
+  buildManual();
+  ['infoBtn', 'panelManualBtn', 'lobbyManualBtn'].forEach(function (id) {
+    $(id).addEventListener('click', openManual);
+  });
+  $('manualClose').addEventListener('click', closeManual);
+  $('manualModal').addEventListener('click', function (e) { if (e.target === this) closeManual(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !$('manualModal').classList.contains('hidden')) closeManual();
+  });
 
   // Acceso desde la consola del navegador para pruebas (p. ej. ajedrez.state)
   window.ajedrez = {

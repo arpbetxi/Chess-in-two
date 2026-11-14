@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <title>Bloqueo: pierdes el turno</title>
+  <g transform="translate(50 52) scale(1.0) translate(-50 -52)" fill="#fff" stroke="#1b1b1b" stroke-width="3.00" stroke-linejoin="round">
+    <circle cx="50" cy="30" r="10"/>
+    <path d="M40 42 h20 l-3 6 h-14 z"/>
+    <path d="M43 48 h14 c0 12 5 19 9 25 h-32 c4 -6 9 -13 9 -25 z"/>
+    <rect x="30" y="73" width="40" height="8" rx="3"/>
+  </g>
+  <circle cx="50" cy="52" r="40" fill="none" stroke="#1b1b1b" stroke-width="13"/>
+  <circle cx="50" cy="52" r="40" fill="none" stroke="#fff" stroke-width="8"/>
+  <line x1="21.7" y1="23.7" x2="78.3" y2="80.3" stroke="#1b1b1b" stroke-width="13" stroke-linecap="round"/>
+  <line x1="21.7" y1="23.7" x2="78.3" y2="80.3" stroke="#fff" stroke-width="8" stroke-linecap="round"/>
+</svg>
