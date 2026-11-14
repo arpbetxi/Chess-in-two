@@ -18,7 +18,7 @@
     { kind: 'color', count: 4 },   // Cambio de color: conviertes 1 pieza rival
     { kind: 'mas2', count: 3 },    // +2: revives hasta 2 piezas tuyas
     { kind: 'sentido', count: 2 }, // Cambio de sentido: se intercambian los colores
-    { kind: 'mas4', count: 1 },    // +4: conviertes hasta 4 piezas rivales
+    { kind: 'mas4', count: 1 },    // +4 Ruleta: 4 piezas rivales al azar pasan a tu bando
   ];
 
   const PIECE_NAMES = { p: 'peón', n: 'caballo', b: 'alfil', r: 'torre', q: 'dama', k: 'rey' };
@@ -30,7 +30,7 @@
       case 'bloqueo': return 'Bloqueo';
       case 'color': return 'Cambio de color';
       case 'mas2': return '+2';
-      case 'mas4': return '+4';
+      case 'mas4': return '+4 Ruleta';
       case 'sentido': return 'Cambio de sentido';
     }
     return '?';
@@ -42,7 +42,7 @@
       case 'bloqueo': return 'Pierdes el turno.';
       case 'color': return 'Conviertes 1 pieza rival (no el rey).';
       case 'mas2': return 'Revives hasta 2 piezas capturadas de tu color en tu mitad del tablero.';
-      case 'mas4': return 'Conviertes hasta 4 piezas rivales (no el rey).';
+      case 'mas4': return 'Ruleta: 4 piezas rivales al azar pasan a tu bando (nunca el rey).';
       case 'sentido': return 'Se gira el tablero: los jugadores intercambian colores.';
     }
     return '';
@@ -109,6 +109,7 @@
       pending: 0,                       // conversiones / revividas que faltan
       ep: null,                         // captura al paso disponible
       lastMove: null,
+      lastConverted: [],                // casillas convertidas en el último turno
       result: null,                     // { type: 'win'|'draw', player?, reason }
       log: [],
     };
@@ -279,6 +280,7 @@
     }
     const card = state.deck.pop();
     state.card = card;
+    state.lastConverted = [];
     state.lastCard = { card: card, player: state.current };
     const who = playerLabel(state, state.current);
     addLog(state, '🃏 ' + who + ' roba: ' + cardName(card) + '.');
@@ -294,12 +296,32 @@
         addLog(state, '⛔ ' + who + ' pierde el turno.');
         endTurn(state);
         break;
-      case 'color':
+      case 'color': {
+        if (convertibleCount(state) === 0) { addLog(state, 'No hay piezas rivales que convertir.'); endTurn(state); }
+        else { state.phase = 'convert'; state.pending = 1; }
+        break;
+      }
       case 'mas4': {
-        const want = card.kind === 'color' ? 1 : 4;
-        const n = Math.min(want, convertibleCount(state));
-        if (n === 0) { addLog(state, 'No hay piezas rivales que convertir.'); endTurn(state); }
-        else { state.phase = 'convert'; state.pending = n; }
+        // Ruleta: se eligen al azar hasta 4 piezas rivales (nunca el rey)
+        const mine = myColor(state);
+        const options = [];
+        for (let r = 0; r < 8; r++) {
+          for (let c = 0; c < 8; c++) {
+            const p = state.board[r][c];
+            if (p && p.color !== mine && p.type !== 'k') options.push([r, c]);
+          }
+        }
+        shuffle(options);
+        const chosen = options.slice(0, 4);
+        if (chosen.length === 0) addLog(state, 'No hay piezas rivales que convertir.');
+        for (const sq of chosen) {
+          const p = state.board[sq[0]][sq[1]];
+          p.color = mine;
+          p.moved = true;
+          addLog(state, '🎰 Ruleta: ' + PIECE_NAMES[p.type] + ' en ' + squareName(sq[0], sq[1]) + ' pasa a ' + COLOR_NAMES[mine] + '.');
+        }
+        state.lastConverted = chosen;
+        endTurn(state);
         break;
       }
       case 'mas2': {
@@ -403,6 +425,7 @@
     const p = state.board[r][c];
     p.color = myColor(state);
     p.moved = true; // ya no puede enrocar ni avanzar dos casillas
+    state.lastConverted = (state.lastConverted || []).concat([[r, c]]);
     state.pending--;
     addLog(state, '🎨 ' + playerLabel(state, state.current) + ' convierte ' +
       PIECE_NAMES[p.type] + ' en ' + squareName(r, c) + '.');

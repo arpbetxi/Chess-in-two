@@ -94,6 +94,9 @@
           sq.classList.add('last');
         }
         if (selected && selected[0] === r && selected[1] === c) sq.classList.add('selected');
+        if ((state.lastConverted || []).some(function (x) { return x[0] === r && x[1] === c; })) {
+          sq.classList.add('converted');
+        }
 
         const t = targets[r + ',' + c];
         if (t) sq.classList.add(t.capture ? 'capture' : 'target');
