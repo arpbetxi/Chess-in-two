@@ -168,9 +168,13 @@
         ? '¡Gana Jugador ' + state.result.player + '! (' + state.result.reason + ')'
         : 'Tablas. ' + state.result.reason + '.';
     } else if (online() && !Net.isConnected()) {
-      text = mode === 'host'
-        ? 'Esperando a que tu rival se conecte. Código de la sala: ' + Net.code
-        : 'Sin conexión con la sala. Abre el menú para reconectar.';
+      if (mode === 'host') {
+        text = Net.ready
+          ? 'Esperando a que tu rival se conecte. Código de la sala: ' + Net.code
+          : 'Creando la sala… Si tarda mucho, abre el menú para ver qué ocurre.';
+      } else {
+        text = 'Sin conexión con la sala. Abre el menú para reconectar.';
+      }
     } else if (!active) {
       text = 'Turno de tu rival. Espera a que juegue…';
     } else {
@@ -227,7 +231,9 @@
     const ns = $('netStatus');
     ns.classList.toggle('hidden', !online());
     ns.classList.toggle('ok', Net.isConnected());
-    ns.textContent = 'Sala ' + (Net.code || '—') + ' · ' + (Net.isConnected() ? 'conectado' : 'sin rival');
+    ns.textContent = Net.ready || Net.isConnected()
+      ? 'Sala ' + Net.code + ' · ' + (Net.isConnected() ? 'conectado' : 'sin rival')
+      : 'Sin conexión';
   }
 
   function render() {

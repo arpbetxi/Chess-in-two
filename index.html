@@ -93,6 +93,12 @@
   </div>
 
   <script src="lib/peerjs.min.js"></script>
+  <!-- Si falta lib/peerjs.min.js, se carga la misma librería desde internet -->
+  <script>
+    if (typeof Peer === 'undefined') {
+      document.write('<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"><\/script>');
+    }
+  </script>
   <script src="engine.js"></script>
   <script src="net.js"></script>
   <script src="ui.js"></script>
