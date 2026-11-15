@@ -651,6 +651,70 @@
     if (e.key === 'Escape' && !$('manualModal').classList.contains('hidden')) closeManual();
   });
 
+  // ---------- Buzón de sugerencias ----------
+  const SUGGEST_URL = (window.AJEDREZ_CONFIG || {}).suggestionsUrl || '';
+  let lastSuggestAt = 0;
+
+  function suggestStatus(text, kind) {
+    const el = $('suggestStatus');
+    el.textContent = text;
+    el.className = 'suggest-status' + (kind ? ' ' + kind : '');
+  }
+  function openSuggest() {
+    $('suggestModal').classList.remove('hidden');
+    if (!SUGGEST_URL) suggestStatus('El buzón todavía no está activado.', 'error');
+    $('suggestText').focus();
+  }
+  function closeSuggest() { $('suggestModal').classList.add('hidden'); }
+
+  function sendSuggestion() {
+    const text = $('suggestText').value.trim();
+    if (!SUGGEST_URL) { suggestStatus('El buzón todavía no está activado.', 'error'); return; }
+    if (text.length < 3) { suggestStatus('Escribe tu sugerencia antes de enviarla.', 'error'); return; }
+    if (Date.now() - lastSuggestAt < 30000) {
+      suggestStatus('Espera unos segundos antes de enviar otra sugerencia.', 'error');
+      return;
+    }
+    const btn = $('suggestSend');
+    btn.disabled = true;
+    suggestStatus('Enviando…');
+    const modeNames = { local: 'Mismo ordenador', host: 'Online', guest: 'Online', bot: 'Contra el bot' };
+    // text/plain evita la comprobación previa (CORS) que Google Apps Script no admite
+    fetch(SUGGEST_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        text: text,
+        category: $('suggestCategory').value,
+        mode: modeNames[mode] || '',
+        website: $('suggestWebsite').value,
+      }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.error || 'error');
+        lastSuggestAt = Date.now();
+        $('suggestText').value = '';
+        $('suggestCount').textContent = '0 / 1500';
+        suggestStatus('¡Gracias! Tu sugerencia se ha enviado.', 'ok');
+      })
+      .catch(function () {
+        suggestStatus('No se ha podido enviar. Revisa tu conexión e inténtalo de nuevo.', 'error');
+      })
+      .then(function () { btn.disabled = false; });
+  }
+
+  $('suggestBtn').addEventListener('click', openSuggest);
+  $('suggestClose').addEventListener('click', closeSuggest);
+  $('suggestModal').addEventListener('click', function (e) { if (e.target === this) closeSuggest(); });
+  $('suggestSend').addEventListener('click', sendSuggestion);
+  $('suggestText').addEventListener('input', function () {
+    $('suggestCount').textContent = this.value.length + ' / 1500';
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !$('suggestModal').classList.contains('hidden')) closeSuggest();
+  });
+
   // Acceso desde la consola del navegador para pruebas (p. ej. ajedrez.state)
   window.ajedrez = {
     get state() { return state; },

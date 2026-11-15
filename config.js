@@ -14,6 +14,9 @@
  * Nota: este archivo es público en GitHub. En el peor caso, alguien podría gastar tu cuota gratuita.
  */
 window.AJEDREZ_CONFIG = {
+  // Buzón de sugerencias: URL de la aplicación web de Google Apps Script (ver sugerencias/LEEME.md)
+  suggestionsUrl: '',
+
   // Opción 1 (la que usamos): usuario y contraseña de una credencial TURN de Metered
   turnUsername: '9e823dab2a33b1d20856b230',
   turnCredential: 'nigaNLZAkgtcyKYt',

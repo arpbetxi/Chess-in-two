@@ -6,7 +6,7 @@
   <title>Ajedrez con cartas</title>
   <link rel="icon" href="data:,">
   <!-- ?v=... obliga al navegador a descargar la versión nueva tras cada cambio -->
-  <link rel="stylesheet" href="style.css?v=20261115b">
+  <link rel="stylesheet" href="style.css?v=20261115c">
 </head>
 <body>
   <header>
@@ -73,6 +73,34 @@
       <button id="lobbyManualBtn" class="link-btn">¿Primera vez? Lee el manual</button>
       <div id="lobbyStatus" class="lobby-status"></div>
       <button id="lobbyClose" class="secondary hidden">Volver a la partida</button>
+    </div>
+  </div>
+
+  <!-- Buzón de sugerencias -->
+  <button id="suggestBtn" class="suggest-fab" title="Enviar una sugerencia">💡 Sugerencias</button>
+  <div id="suggestModal" class="modal suggest-modal hidden" role="dialog" aria-labelledby="suggestTitle">
+    <div class="modal-box suggest-box">
+      <div class="manual-head">
+        <h2 id="suggestTitle">Buzón de sugerencias</h2>
+        <button id="suggestClose" class="close-btn" aria-label="Cerrar">✕</button>
+      </div>
+      <p class="hint">¿Una idea para el juego, una carta nueva o algo que no funciona? Cuéntalo aquí. Es <strong>anónimo</strong>: no se guarda tu nombre ni tu correo.</p>
+      <label class="field-label" for="suggestCategory">Tipo</label>
+      <select id="suggestCategory">
+        <option>Idea</option>
+        <option>Nueva carta</option>
+        <option>Error</option>
+        <option>Otro</option>
+      </select>
+      <label class="field-label" for="suggestText">Tu sugerencia</label>
+      <textarea id="suggestText" maxlength="1500" rows="6" placeholder="Escribe tu sugerencia…"></textarea>
+      <!-- Campo trampa contra bots de spam: no lo rellenes -->
+      <input id="suggestWebsite" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div class="suggest-foot">
+        <span id="suggestCount" class="hint">0 / 1500</span>
+        <button id="suggestSend">Enviar</button>
+      </div>
+      <div id="suggestStatus" class="suggest-status"></div>
     </div>
   </div>
 
@@ -163,10 +191,10 @@
       document.write('<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"><\/script>');
     }
   </script>
-  <script src="config.js?v=20261115b"></script>
-  <script src="engine.js?v=20261115b"></script>
-  <script src="net.js?v=20261115b"></script>
-  <script src="bot.js?v=20261115b"></script>
-  <script src="ui.js?v=20261115b"></script>
+  <script src="config.js?v=20261115c"></script>
+  <script src="engine.js?v=20261115c"></script>
+  <script src="net.js?v=20261115c"></script>
+  <script src="bot.js?v=20261115c"></script>
+  <script src="ui.js?v=20261115c"></script>
 </body>
 </html>
