@@ -518,3 +518,26 @@ button.cap-piece.chosen { border-color: #2f9e62; background: #2c5040; }
 @media (prefers-reduced-motion: reduce) {
   .sq.king-threat { animation: none; box-shadow: inset 0 0 0 3px rgba(235, 40, 40, 0.9); }
 }
+
+/* ---------- Variante de reglas ---------- */
+.rules-row { display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.rules-row label { font-size: 0.85rem; color: var(--muted); }
+.rules-row select {
+  font: inherit;
+  font-size: 0.92rem;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background: #1e2126;
+  color: var(--text);
+}
+.variant-tag {
+  align-self: flex-start;
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: #343a43;
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-top: -6px;
+}
+.variant-note { margin-top: 10px !important; }

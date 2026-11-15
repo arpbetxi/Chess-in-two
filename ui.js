@@ -24,9 +24,11 @@
   };
   // Explicación más detallada de cada carta para el manual
   const MANUAL_TEXT = {
-    num: function (n) {
-      return 'Haces ' + (n === 1 ? '1 movimiento' : n + ' movimientos seguidos') +
-        '. Puedes capturar varias piezas, pero si dejas al rey rival amenazado, tu turno termina.';
+    num: function (n, rules) {
+      return 'Haces ' + (n === 1 ? '1 movimiento' : n + ' movimientos seguidos') + '. ' +
+        (Engine.RULESETS[rules] && Engine.RULESETS[rules].captureEndsTurn
+          ? 'Si capturas una pieza, tu turno termina aunque te queden movimientos.'
+          : 'Puedes capturar varias piezas, pero si dejas al rey rival amenazado, tu turno termina.');
     },
     bloqueo: 'Pierdes el turno: no mueves nada.',
     color: 'Eliges una pieza rival (cualquiera menos el rey) y pasa a ser tuya en la misma casilla.',
@@ -218,7 +220,7 @@
       slot.appendChild(ce);
       const cap = document.createElement('div');
       cap.className = 'card-caption';
-      cap.textContent = Engine.cardDescription(state.card);
+      cap.textContent = Engine.cardDescription(state.card, state);
       slot.appendChild(cap);
     } else if (state.lastCard) {
       const ce = cardElement(state.lastCard.card, true);
@@ -318,6 +320,9 @@
   function render() {
     renderBoard();
     renderPanel();
+    const tag = $('variantTag');
+    tag.textContent = 'Fin del turno: ' + Engine.RULESETS[state.rules || Engine.DEFAULT_RULESET].name.replace('Termina ', '').toLowerCase();
+    tag.classList.toggle('hidden', !mode);
   }
 
   // Tras cualquier cambio en la partida
@@ -351,7 +356,7 @@
     front.innerHTML = '';
     front.appendChild(cardElement(card, false));
     $('revealWho').textContent = whoDrew(player);
-    $('revealDesc').textContent = card.kind === 'num' ? MANUAL_TEXT.num(card.n) : MANUAL_TEXT[card.kind];
+    $('revealDesc').textContent = card.kind === 'num' ? MANUAL_TEXT.num(card.n, state.rules) : MANUAL_TEXT[card.kind];
     // Reinicia las animaciones aunque ya se estuviera mostrando otra carta
     box.classList.add('hidden');
     box.classList.remove('leaving');
@@ -403,7 +408,7 @@
   // Aplica una acción a la partida (en local o en el anfitrión). Devuelve true si era válida.
   function applyAction(action, player) {
     if (action.type === 'newGame') {
-      state = Engine.newGame();
+      state = Engine.newGame(null, state.rules); // la nueva partida mantiene la variante
       return true;
     }
     if (state.phase === 'over' || state.current !== player) return false;
@@ -566,11 +571,32 @@
     },
   };
 
+  // ---------- Variante de reglas ----------
+  const RULES_KEY = 'ajedrezCartas.variante';
+  function chosenRules() {
+    const v = $('rulesSelect').value;
+    try { localStorage.setItem(RULES_KEY, v); } catch (e) { /* sin guardado */ }
+    return v;
+  }
+  try {
+    const savedRules = localStorage.getItem(RULES_KEY);
+    if (savedRules && Engine.RULESETS[savedRules]) $('rulesSelect').value = savedRules;
+  } catch (e) { /* sin guardado */ }
+
+  // Muestra en el manual solo las reglas de la variante de la partida
+  function updateRulesTexts() {
+    const r = state.rules || Engine.DEFAULT_RULESET;
+    document.querySelectorAll('[data-rules]').forEach(function (el) {
+      el.classList.toggle('hidden', el.getAttribute('data-rules') !== r);
+    });
+    $('variantName').textContent = Engine.RULESETS[r].name;
+  }
+
   $('hostBtn').addEventListener('click', function () {
     stopBot();
     const saved = loadSave();
     let code = null;
-    state = Engine.newGame();
+    state = Engine.newGame(null, chosenRules());
     if (saved && saved.state && saved.state.phase !== 'over' &&
         window.confirm('Tienes una partida online sin terminar (sala ' + saved.code + '). ¿Quieres continuarla?')) {
       state = Engine.restore(saved.state);
@@ -607,7 +633,7 @@
     myPlayer = 1;
     botLevel = $('botLevel').value;
     manualFlip = false;
-    state = Engine.newGame();
+    state = Engine.newGame(null, chosenRules());
     lobbyStatus('');
     hideLobby();
     afterAction();
@@ -619,7 +645,7 @@
     mode = 'local';
     myPlayer = null;
     manualFlip = false;
-    state = Engine.newGame();
+    state = Engine.newGame(null, chosenRules());
     lobbyStatus('');
     hideLobby();
     afterAction();
@@ -646,7 +672,7 @@
       const h = document.createElement('h4');
       h.textContent = Engine.cardName(card);
       const p = document.createElement('p');
-      p.textContent = card.kind === 'num' ? MANUAL_TEXT.num(card.n) : MANUAL_TEXT[card.kind];
+      p.textContent = card.kind === 'num' ? MANUAL_TEXT.num(card.n, state.rules) : MANUAL_TEXT[card.kind];
       const copies = document.createElement('div');
       copies.className = 'copies';
       copies.textContent = spec.count + (spec.count === 1 ? ' carta' : ' cartas') + ' en el mazo';
@@ -658,7 +684,12 @@
     }
     $('manualDeckTotal').textContent = total;
   }
-  function openManual() { $('manualModal').classList.remove('hidden'); $('manualClose').focus(); }
+  function openManual() {
+    buildManual();
+    updateRulesTexts();
+    $('manualModal').classList.remove('hidden');
+    $('manualClose').focus();
+  }
   function closeManual() { $('manualModal').classList.add('hidden'); }
 
   buildManual();

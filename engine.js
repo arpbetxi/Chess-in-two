@@ -26,8 +26,8 @@
   // 'original': (v1, oculta) una captura termina el turno; amenazar al rey no tiene efecto.
   //             Ver reglas/reglamento-v1-captura-termina-turno.md
   const RULESETS = {
-    actual: { captureEndsTurn: false, threatEndsTurn: true },
-    original: { captureEndsTurn: true, threatEndsTurn: false },
+    actual: { captureEndsTurn: false, threatEndsTurn: true, name: 'Termina al amenazar al rey' },
+    original: { captureEndsTurn: true, threatEndsTurn: false, name: 'Termina al capturar' },
   };
   const DEFAULT_RULESET = 'actual';
   function rulesOf(state) { return RULESETS[(state && state.rules) || DEFAULT_RULESET] || RULESETS[DEFAULT_RULESET]; }
@@ -47,9 +47,11 @@
     return '?';
   }
 
-  function cardDescription(card) {
+  function cardDescription(card, state) {
     switch (card.kind) {
-      case 'num': return 'Haces ' + cardName(card) + ' seguidos. Si amenazas al rey rival, el turno termina.';
+      case 'num':
+        return 'Haces ' + cardName(card) + ' seguidos. ' +
+          (rulesOf(state).captureEndsTurn ? 'Si capturas, el turno termina.' : 'Si amenazas al rey rival, el turno termina.');
       case 'bloqueo': return 'Pierdes el turno.';
       case 'color': return 'Conviertes 1 pieza rival (no el rey).';
       case 'mas2': return 'Revives hasta 2 piezas capturadas de tu color en tu mitad del tablero.';

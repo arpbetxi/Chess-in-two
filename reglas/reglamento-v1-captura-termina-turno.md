@@ -1,6 +1,6 @@
 # Reglamento v1: "La captura termina el turno"
 
-Versión guardada el 15 de noviembre de 2026, antes de cambiar la regla de capturas. Sigue programada en el juego como el conjunto de reglas **`original`** (`engine.js`, `RULESETS`), aunque ahora mismo no se puede elegir desde el menú.
+Versión guardada el 15 de noviembre de 2026, antes de cambiar la regla de capturas. Se puede jugar eligiendo **Fin del turno: Al capturar una pieza** en el menú (en el código, el conjunto de reglas `original` de `engine.js`).
 
 **Diferencia con la versión actual:** en esta versión, una captura termina el turno aunque queden movimientos, y amenazar al rey rival no tiene ningún efecto especial.
 

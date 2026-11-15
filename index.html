@@ -6,7 +6,7 @@
   <title>Ajedrez con cartas</title>
   <link rel="icon" href="data:,">
   <!-- ?v=... obliga al navegador a descargar la versión nueva tras cada cambio -->
-  <link rel="stylesheet" href="style.css?v=20261115f">
+  <link rel="stylesheet" href="style.css?v=20261115g">
 </head>
 <body>
   <header>
@@ -27,6 +27,7 @@
 
     <aside class="panel">
       <div id="turn" class="turn"></div>
+      <div id="variantTag" class="variant-tag hidden"></div>
 
       <div class="card-area">
         <div class="deck">
@@ -57,6 +58,13 @@
   <div id="lobby" class="modal">
     <div class="modal-box lobby-box">
       <p>Ajedrez con cartas</p>
+      <div class="rules-row">
+        <label for="rulesSelect">Fin del turno</label>
+        <select id="rulesSelect">
+          <option value="actual">Al amenazar al rey</option>
+          <option value="original">Al capturar una pieza</option>
+        </select>
+      </div>
       <button id="hostBtn">Crear partida online</button>
       <div class="join-row">
         <input id="joinCode" maxlength="6" placeholder="Código" autocomplete="off">
@@ -123,6 +131,8 @@
         <button id="manualClose" class="close-btn" aria-label="Cerrar el manual">✕</button>
       </div>
 
+      <p class="hint variant-note">Variante de esta partida: <strong id="variantName"></strong>. Se elige en el menú, al crear la partida (en online la elige quien crea la sala).</p>
+
       <section>
         <h3>Objetivo</h3>
         <p>Se juega con las piezas y movimientos del ajedrez, pero <strong>gana quien captura el rey rival</strong>. No existe el jaque ni el jaque mate: puedes dejar tu rey expuesto, pero si el rival lo captura, pierdes.</p>
@@ -133,8 +143,9 @@
         <ol>
           <li>Pulsa <strong>Robar carta</strong>.</li>
           <li>Si es un <strong>número</strong>, haces ese número de movimientos seguidos. Puedes mover la misma pieza varias veces.</li>
-          <li>Puedes <strong>capturar</strong> varias piezas en el mismo turno.</li>
-          <li>Si con un movimiento dejas al <strong>rey rival amenazado</strong>, tu turno termina aunque te queden movimientos. Así el rival siempre tiene un turno para defenderse.</li>
+          <li data-rules="actual">Puedes <strong>capturar</strong> varias piezas en el mismo turno.</li>
+          <li data-rules="actual">Si con un movimiento dejas al <strong>rey rival amenazado</strong>, tu turno termina aunque te queden movimientos. Así el rival siempre tiene un turno para defenderse.</li>
+          <li data-rules="original">Si <strong>capturas</strong> una pieza, tu turno termina aunque te queden movimientos.</li>
           <li>Si es una <strong>carta especial</strong>, se aplica su efecto y ese es todo tu turno.</li>
         </ol>
         <p class="hint">Para mover: pulsa una de tus piezas y después la casilla de destino. Los puntos marcan dónde puedes ir y los círculos rojos, qué puedes capturar. Si un rey se ilumina en rojo, el rival podría capturarlo con su próximo movimiento.</p>
@@ -192,10 +203,10 @@
       document.write('<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"><\/script>');
     }
   </script>
-  <script src="config.js?v=20261115f"></script>
-  <script src="engine.js?v=20261115f"></script>
-  <script src="net.js?v=20261115f"></script>
-  <script src="bot.js?v=20261115f"></script>
-  <script src="ui.js?v=20261115f"></script>
+  <script src="config.js?v=20261115g"></script>
+  <script src="engine.js?v=20261115g"></script>
+  <script src="net.js?v=20261115g"></script>
+  <script src="bot.js?v=20261115g"></script>
+  <script src="ui.js?v=20261115g"></script>
 </body>
 </html>
