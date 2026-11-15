@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#1e2126">
   <!-- ?v=... obliga al navegador a descargar la versión nueva tras cada cambio -->
-  <link rel="stylesheet" href="style.css?v=20261115j">
+  <link rel="stylesheet" href="style.css?v=20261115k">
 </head>
 <body>
   <header>
@@ -36,6 +36,9 @@
         <div class="deck">
           <div class="deck-back"><span id="deckCount">60</span></div>
           <button id="drawBtn">Robar carta</button>
+          <label class="auto-draw" title="Roba la carta sola al empezar tu turno">
+            <input type="checkbox" id="autoDraw"> Robar automáticamente
+          </label>
         </div>
         <div id="cardView" class="card-slot"></div>
       </div>
@@ -218,10 +221,10 @@
       document.write('<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"><\/script>');
     }
   </script>
-  <script src="config.js?v=20261115j"></script>
-  <script src="engine.js?v=20261115j"></script>
-  <script src="net.js?v=20261115j"></script>
-  <script src="bot.js?v=20261115j"></script>
-  <script src="ui.js?v=20261115j"></script>
+  <script src="config.js?v=20261115k"></script>
+  <script src="engine.js?v=20261115k"></script>
+  <script src="net.js?v=20261115k"></script>
+  <script src="bot.js?v=20261115k"></script>
+  <script src="ui.js?v=20261115k"></script>
 </body>
 </html>

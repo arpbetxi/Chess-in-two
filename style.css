@@ -563,3 +563,17 @@ button.cap-piece.chosen { border-color: #2f9e62; background: #2c5040; }
 .score-row.leader .who::before { content: "👑 "; }
 .score-row.ties { color: var(--muted); font-size: 0.85rem; }
 .score-row.ties .num { font-size: 0.95rem; font-weight: 600; }
+
+/* ---------- Robar automáticamente ---------- */
+.auto-draw {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+  max-width: 120px;
+  line-height: 1.2;
+}
+.auto-draw input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); flex-shrink: 0; cursor: pointer; }

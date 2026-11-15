@@ -344,7 +344,34 @@
       $('overModal').classList.add('hidden');
     }
     scheduleBot();
+    scheduleAutoDraw();
   }
+
+  // ---------- Robar automáticamente (preferencia de cada jugador) ----------
+  const AUTO_DRAW_KEY = 'ajedrezCartas.roboAutomatico';
+  const AUTO_DRAW_DELAY = 700;
+  let autoDrawTimer = null;
+
+  function autoDrawOn() { return $('autoDraw').checked; }
+
+  function scheduleAutoDraw() {
+    if (!autoDrawOn() || autoDrawTimer || !canAct() || state.phase !== 'draw') return;
+    // Espera a que termine la animación de la carta anterior (por ejemplo, la del rival)
+    const wait = Math.max(AUTO_DRAW_DELAY, revealUntil - Date.now() + 300);
+    autoDrawTimer = setTimeout(function () {
+      autoDrawTimer = null;
+      if (!autoDrawOn() || !canAct() || state.phase !== 'draw') return;
+      if (Date.now() < revealUntil) { scheduleAutoDraw(); return; }
+      dispatch({ type: 'draw' });
+    }, wait);
+  }
+
+  try { $('autoDraw').checked = localStorage.getItem(AUTO_DRAW_KEY) === '1'; } catch (e) { /* sin guardado */ }
+  $('autoDraw').addEventListener('change', function () {
+    try { localStorage.setItem(AUTO_DRAW_KEY, this.checked ? '1' : '0'); } catch (e) { /* sin guardado */ }
+    if (this.checked) scheduleAutoDraw();
+    else { clearTimeout(autoDrawTimer); autoDrawTimer = null; }
+  });
 
   // ---------- Carta robada en grande ----------
   function whoDrew(player) {
