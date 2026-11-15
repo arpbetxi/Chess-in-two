@@ -107,14 +107,16 @@
 
   // ---------- Estado de la partida ----------
   function newGame(rng, rules) {
+    // Sorteo de colores: cualquiera de los dos jugadores puede llevar blancas (que siempre empiezan)
+    const p1White = (rng || Math.random)() < 0.5;
     return {
       rules: RULESETS[rules] ? rules : DEFAULT_RULESET, // conjunto de reglas de esta partida
       gameId: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), // para contar cada partida una sola vez en el marcador
       names: { 1: 'Jugador 1', 2: 'Jugador 2' },
       board: createBoard(),
       captured: { w: [], b: [] },       // piezas capturadas de cada color (tipos)
-      playerColor: { 1: 'w', 2: 'b' },  // qué color lleva cada jugador
-      current: 1,                       // jugador al que le toca
+      playerColor: p1White ? { 1: 'w', 2: 'b' } : { 1: 'b', 2: 'w' }, // qué color lleva cada jugador
+      current: p1White ? 1 : 2,         // jugador al que le toca: el de blancas
       deck: buildDeck(rng),
       discard: [],
       phase: 'draw',                    // draw | moves | convert | revive | over
@@ -354,8 +356,8 @@
         const c1 = state.playerColor[1];
         state.playerColor[1] = state.playerColor[2];
         state.playerColor[2] = c1;
-        addLog(state, '🔄 Se gira el tablero: Jugador 1 lleva ' + COLOR_NAMES[state.playerColor[1]] +
-          ' y Jugador 2 lleva ' + COLOR_NAMES[state.playerColor[2]] + '.');
+        addLog(state, '🔄 Se gira el tablero: ' + playerName(state, 1) + ' lleva ' + COLOR_NAMES[state.playerColor[1]] +
+          ' y ' + playerName(state, 2) + ' lleva ' + COLOR_NAMES[state.playerColor[2]] + '.');
         endTurn(state);
         break;
       }

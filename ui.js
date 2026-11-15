@@ -441,6 +441,7 @@
       const names = state.names;
       state = Engine.newGame(null, state.rules); // la nueva partida mantiene la variante
       state.names = names;                       // y los nombres
+      announceColors();
       return true;
     }
     if (state.phase === 'over' || state.current !== player) return false;
@@ -613,6 +614,13 @@
     },
   };
 
+  // Apunta en el registro el resultado del sorteo de colores
+  function announceColors() {
+    state.log.push('🎲 Sorteo de colores: ' + Engine.playerName(state, 1) + ' lleva ' +
+      Engine.COLOR_NAMES[state.playerColor[1]] + ' y ' + Engine.playerName(state, 2) + ' lleva ' +
+      Engine.COLOR_NAMES[state.playerColor[2]] + '. Empiezan blancas.');
+  }
+
   // ---------- Nombres y marcador ----------
   const NAME_KEY = 'ajedrezCartas.nombre';
   const SCORE_PREFIX = 'ajedrezCartas.marcador.';
@@ -722,8 +730,13 @@
       state = Engine.restore(saved.state);
       code = saved.code;
     }
-    if (!state.names || state.names[1] === 'Jugador 1') state.names = { 1: myName(), 2: 'Rival' };
-    else state.names[1] = myName();
+    if (!state.names || state.names[1] === 'Jugador 1') {
+      state.names = { 1: myName(), 2: 'Rival' };
+      state.log.push('🎲 Sorteo de colores: ' + state.names[1] + ' lleva ' + Engine.COLOR_NAMES[state.playerColor[1]] +
+        ' y su rival lleva ' + Engine.COLOR_NAMES[state.playerColor[2]] + '. Empiezan blancas.');
+    } else {
+      state.names[1] = myName();
+    }
     mode = 'host';
     myPlayer = 1;
     lastDrawCount = null; // una partida guardada no debe mostrar su última carta como recién robada
@@ -759,6 +772,7 @@
     manualFlip = false;
     state = Engine.newGame(null, chosenRules());
     state.names = { 1: myName(), 2: 'Bot (' + (botLevel === 'facil' ? 'Fácil' : 'Normal') + ')' };
+    announceColors();
     lobbyStatus('');
     hideLobby();
     afterAction();
@@ -776,6 +790,7 @@
     rival = cleanName(window.prompt('Nombre del otro jugador (Jugador 2):', rival || 'Jugador 2'), 'Jugador 2');
     try { localStorage.setItem('ajedrezCartas.rivalLocal', rival); } catch (e) { /* nada */ }
     state.names = { 1: myName(), 2: rival };
+    announceColors();
     lobbyStatus('');
     hideLobby();
     afterAction();
