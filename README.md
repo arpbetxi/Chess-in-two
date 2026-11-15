@@ -4,6 +4,8 @@ Variante de ajedrez en la que cada turno se roba una carta que decide cuántos m
 
 ## Archivos
 
+- `PROXIMOS-PASOS.md`: ideas pendientes para las próximas versiones.
+
 - `index.html`: la página.
 - `style.css`: el aspecto.
 - `engine.js`: todas las reglas. `DECK_SPEC`, al principio del archivo, define la composición del mazo.
