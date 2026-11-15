@@ -37,6 +37,7 @@
     sentido: 'Se gira el tablero: los jugadores intercambian colores. Quien llevaba blancas pasa a llevar negras, con sus piezas y capturas.',
   };
   let lastDrawCount = null; // para animar solo las cartas recién robadas
+  let freshSync = false;    // el invitado acaba de conectarse y aún no ha recibido la partida
   const REVEAL_MS = 2200;   // cuánto se ve la carta en grande
   let revealTimer = null;
   let revealUntil = 0;      // el bot espera a que termine la animación
@@ -240,7 +241,7 @@
       if (state.result.type !== 'win') {
         text = 'Tablas. ' + state.result.reason + '.';
       } else if (mode === 'local') {
-        text = '¡Gana Jugador ' + state.result.player + '! (' + state.result.reason + ')';
+        text = '¡Gana ' + Engine.playerName(state, state.result.player) + '! (' + state.result.reason + ')';
       } else if (state.result.player === myPlayer) {
         text = '¡Has ganado! (' + state.result.reason + ')';
       } else {
@@ -320,6 +321,7 @@
   function render() {
     renderBoard();
     renderPanel();
+    renderScore();
     const tag = $('variantTag');
     tag.textContent = 'Fin del turno: ' + Engine.RULESETS[state.rules || Engine.DEFAULT_RULESET].name.replace('Termina ', '').toLowerCase();
     tag.classList.toggle('hidden', !mode);
@@ -330,6 +332,7 @@
     clearSelection();
     if (state.phase !== 'revive') reviveChoice = null;
     else if (reviveChoice === null || reviveChoice >= state.captured[Engine.myColor(state)].length) reviveChoice = 0;
+    if (state.phase === 'over') recordResult(); // antes de dibujar, para que el marcador salga ya actualizado
     render();
     if (state.phase === 'over' && !shownOver) {
       shownOver = true;
@@ -408,7 +411,9 @@
   // Aplica una acción a la partida (en local o en el anfitrión). Devuelve true si era válida.
   function applyAction(action, player) {
     if (action.type === 'newGame') {
+      const names = state.names;
       state = Engine.newGame(null, state.rules); // la nueva partida mantiene la variante
+      state.names = names;                       // y los nombres
       return true;
     }
     if (state.phase === 'over' || state.current !== player) return false;
@@ -538,6 +543,8 @@
     onConnected: function () {
       if (mode === 'host') {
         Net.send({ t: 'state', state: state });
+      } else {
+        Net.send({ t: 'hello', name: myName() }); // el anfitrión apunta nuestro nombre
       }
       hideLobby();
       render();
@@ -557,7 +564,13 @@
     },
     onData: function (msg) {
       if (!msg || typeof msg !== 'object') return;
-      if (mode === 'host' && msg.t === 'action') {
+      if (mode === 'host' && msg.t === 'hello') {
+        let guestName = cleanName(msg.name, 'Rival');
+        if (guestName === Engine.playerName(state, 1)) guestName += ' 2'; // evita dos jugadores con el mismo nombre
+        state.names = Object.assign({}, state.names, { 2: guestName });
+        shareState();
+        afterAction();
+      } else if (mode === 'host' && msg.t === 'action') {
         if (applyAction(msg.action, 2)) {
           shareState();
           afterAction();
@@ -565,11 +578,95 @@
           Net.send({ t: 'state', state: state }); // resincroniza al invitado
         }
       } else if (mode === 'guest' && msg.t === 'state') {
+        // Al (re)conectarse, la partida recibida no debe mostrar como "nueva" la última carta
+        if (freshSync) { lastDrawCount = null; freshSync = false; }
         state = Engine.restore(msg.state);
         afterAction();
       }
     },
   };
+
+  // ---------- Nombres y marcador ----------
+  const NAME_KEY = 'ajedrezCartas.nombre';
+  const SCORE_PREFIX = 'ajedrezCartas.marcador.';
+  const COUNTED_KEY = 'ajedrezCartas.partidasContadas';
+
+  function cleanName(name, fallback) {
+    const n = String(name || '').replace(/\s+/g, ' ').trim().slice(0, 20);
+    return n || fallback;
+  }
+  function myName() {
+    const n = cleanName($('playerName').value, 'Jugador');
+    try { localStorage.setItem(NAME_KEY, n); } catch (e) { /* sin guardado */ }
+    return n;
+  }
+  try { $('playerName').value = localStorage.getItem(NAME_KEY) || ''; } catch (e) { /* sin guardado */ }
+
+  // Un marcador por pareja de jugadores (da igual quién lleve blancas)
+  function scoreKey() {
+    const a = Engine.playerName(state, 1), b = Engine.playerName(state, 2);
+    return SCORE_PREFIX + [a, b].sort().join(' vs ');
+  }
+  function loadScore() {
+    try { return JSON.parse(localStorage.getItem(scoreKey())) || { wins: {}, ties: 0 }; }
+    catch (e) { return { wins: {}, ties: 0 }; }
+  }
+  function saveScore(score) {
+    try { localStorage.setItem(scoreKey(), JSON.stringify(score)); } catch (e) { /* sin guardado */ }
+  }
+
+  // Suma el resultado una sola vez por partida (aunque se recargue o se reconecte)
+  function recordResult() {
+    if (!mode || !state.result || !state.gameId) return;
+    let counted = [];
+    try { counted = JSON.parse(localStorage.getItem(COUNTED_KEY)) || []; } catch (e) { /* nada */ }
+    if (counted.indexOf(state.gameId) >= 0) return;
+    const score = loadScore();
+    if (state.result.type === 'win') {
+      const winner = Engine.playerName(state, state.result.player);
+      score.wins[winner] = (score.wins[winner] || 0) + 1;
+    } else {
+      score.ties = (score.ties || 0) + 1;
+    }
+    saveScore(score);
+    counted.push(state.gameId);
+    try { localStorage.setItem(COUNTED_KEY, JSON.stringify(counted.slice(-200))); } catch (e) { /* nada */ }
+  }
+
+  function renderScore() {
+    const box = $('scoreBox');
+    box.classList.toggle('hidden', !mode);
+    if (!mode) return;
+    const score = loadScore();
+    const names = [Engine.playerName(state, 1), Engine.playerName(state, 2)];
+    const best = Math.max(score.wins[names[0]] || 0, score.wins[names[1]] || 0);
+    const rows = $('scoreRows');
+    rows.innerHTML = '';
+    names.forEach(function (n) {
+      const w = score.wins[n] || 0;
+      const row = document.createElement('div');
+      row.className = 'score-row' + (w > 0 && w === best && (score.wins[names[0]] || 0) !== (score.wins[names[1]] || 0) ? ' leader' : '');
+      const who = document.createElement('span');
+      who.className = 'who';
+      who.textContent = n;
+      const num = document.createElement('span');
+      num.className = 'num';
+      num.textContent = w;
+      row.appendChild(who);
+      row.appendChild(num);
+      rows.appendChild(row);
+    });
+    const ties = document.createElement('div');
+    ties.className = 'score-row ties';
+    ties.innerHTML = '<span class="who">Tablas</span><span class="num">' + (score.ties || 0) + '</span>';
+    rows.appendChild(ties);
+  }
+
+  $('scoreReset').addEventListener('click', function () {
+    if (!window.confirm('¿Poner a cero el marcador entre ' + Engine.playerName(state, 1) + ' y ' + Engine.playerName(state, 2) + '?')) return;
+    saveScore({ wins: {}, ties: 0 });
+    renderScore();
+  });
 
   // ---------- Variante de reglas ----------
   const RULES_KEY = 'ajedrezCartas.variante';
@@ -602,8 +699,11 @@
       state = Engine.restore(saved.state);
       code = saved.code;
     }
+    if (!state.names || state.names[1] === 'Jugador 1') state.names = { 1: myName(), 2: 'Rival' };
+    else state.names[1] = myName();
     mode = 'host';
     myPlayer = 1;
+    lastDrawCount = null; // una partida guardada no debe mostrar su última carta como recién robada
     manualFlip = false;
     Net.host(code);
     writeSave();
@@ -619,6 +719,7 @@
     stopBot();
     mode = 'guest';
     myPlayer = 2;
+    freshSync = true;
     manualFlip = false;
     Net.join(code);
     render();
@@ -634,6 +735,7 @@
     botLevel = $('botLevel').value;
     manualFlip = false;
     state = Engine.newGame(null, chosenRules());
+    state.names = { 1: myName(), 2: 'Bot (' + (botLevel === 'facil' ? 'Fácil' : 'Normal') + ')' };
     lobbyStatus('');
     hideLobby();
     afterAction();
@@ -646,6 +748,11 @@
     myPlayer = null;
     manualFlip = false;
     state = Engine.newGame(null, chosenRules());
+    let rival = '';
+    try { rival = localStorage.getItem('ajedrezCartas.rivalLocal') || ''; } catch (e) { /* nada */ }
+    rival = cleanName(window.prompt('Nombre del otro jugador (Jugador 2):', rival || 'Jugador 2'), 'Jugador 2');
+    try { localStorage.setItem('ajedrezCartas.rivalLocal', rival); } catch (e) { /* nada */ }
+    state.names = { 1: myName(), 2: rival };
     lobbyStatus('');
     hideLobby();
     afterAction();

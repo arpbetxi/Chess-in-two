@@ -6,7 +6,7 @@
   <title>Ajedrez con cartas</title>
   <link rel="icon" href="data:,">
   <!-- ?v=... obliga al navegador a descargar la versión nueva tras cada cambio -->
-  <link rel="stylesheet" href="style.css?v=20261115g">
+  <link rel="stylesheet" href="style.css?v=20261115h">
 </head>
 <body>
   <header>
@@ -39,6 +39,14 @@
 
       <p id="instructions" class="instructions"></p>
 
+      <div id="scoreBox" class="score-box hidden">
+        <div class="score-head">
+          <h3>Marcador</h3>
+          <button id="scoreReset" class="link-btn small" title="Poner el marcador a cero">Reiniciar</button>
+        </div>
+        <div id="scoreRows" class="score-rows"></div>
+      </div>
+
       <div class="captured">
         <h3>Capturadas</h3>
         <div class="captured-row"><span class="label">Blancas:</span><div id="captured-w" class="captured-list"></div></div>
@@ -58,6 +66,10 @@
   <div id="lobby" class="modal">
     <div class="modal-box lobby-box">
       <p>Ajedrez con cartas</p>
+      <div class="rules-row">
+        <label for="playerName">Tu nombre (para el marcador)</label>
+        <input id="playerName" maxlength="20" placeholder="Tu nombre" autocomplete="nickname">
+      </div>
       <div class="rules-row">
         <label for="rulesSelect">Fin del turno</label>
         <select id="rulesSelect">
@@ -203,10 +215,10 @@
       document.write('<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"><\/script>');
     }
   </script>
-  <script src="config.js?v=20261115g"></script>
-  <script src="engine.js?v=20261115g"></script>
-  <script src="net.js?v=20261115g"></script>
-  <script src="bot.js?v=20261115g"></script>
-  <script src="ui.js?v=20261115g"></script>
+  <script src="config.js?v=20261115h"></script>
+  <script src="engine.js?v=20261115h"></script>
+  <script src="net.js?v=20261115h"></script>
+  <script src="bot.js?v=20261115h"></script>
+  <script src="ui.js?v=20261115h"></script>
 </body>
 </html>

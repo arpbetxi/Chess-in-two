@@ -541,3 +541,25 @@ button.cap-piece.chosen { border-color: #2f9e62; background: #2c5040; }
   margin-top: -6px;
 }
 .variant-note { margin-top: 10px !important; }
+
+/* ---------- Marcador ---------- */
+.rules-row input {
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background: #1e2126;
+  color: var(--text);
+}
+.score-box { background: #343a43; border-radius: 10px; padding: 10px 12px; }
+.score-head { display: flex; align-items: center; justify-content: space-between; }
+.score-head h3 { margin: 0; }
+.link-btn.small { font-size: 0.8rem; padding: 2px 4px; }
+.score-rows { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.score-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem; }
+.score-row .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 210px; }
+.score-row .num { font-weight: 800; font-size: 1.15rem; min-width: 2ch; text-align: right; }
+.score-row.leader .who::before { content: "👑 "; }
+.score-row.ties { color: var(--muted); font-size: 0.85rem; }
+.score-row.ties .num { font-size: 0.95rem; font-weight: 600; }

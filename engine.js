@@ -109,6 +109,8 @@
   function newGame(rng, rules) {
     return {
       rules: RULESETS[rules] ? rules : DEFAULT_RULESET, // conjunto de reglas de esta partida
+      gameId: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), // para contar cada partida una sola vez en el marcador
+      names: { 1: 'Jugador 1', 2: 'Jugador 2' },
       board: createBoard(),
       captured: { w: [], b: [] },       // piezas capturadas de cada color (tipos)
       playerColor: { 1: 'w', 2: 'b' },  // qué color lleva cada jugador
@@ -130,8 +132,11 @@
   }
 
   function myColor(state) { return state.playerColor[state.current]; }
+  function playerName(state, player) {
+    return (state.names && state.names[player]) || 'Jugador ' + player;
+  }
   function playerLabel(state, player) {
-    return 'Jugador ' + player + ' (' + COLOR_NAMES[state.playerColor[player]] + ')';
+    return playerName(state, player) + ' (' + COLOR_NAMES[state.playerColor[player]] + ')';
   }
   function addLog(state, text) { state.log.push(text); }
 
@@ -508,6 +513,7 @@
     newGame: newGame,
     myColor: myColor,
     playerLabel: playerLabel,
+    playerName: playerName,
     cardName: cardName,
     cardDescription: cardDescription,
     squareName: squareName,
