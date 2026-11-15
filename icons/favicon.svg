@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>In 2 Chess</title>
+  <!-- Carta de atrás -->
+  <rect x="9" y="9" width="32" height="46" rx="6" fill="#c2453c" stroke="#fff" stroke-width="3" transform="rotate(-14 25 32)"/>
+  <!-- Carta de delante -->
+  <rect x="23" y="7" width="32" height="46" rx="6" fill="#2f7dbf" stroke="#fff" stroke-width="3" transform="rotate(10 39 30)"/>
+  <!-- Peón -->
+  <g transform="translate(39 33) scale(0.62) translate(-50 -52)" fill="#fff" stroke="#1b1b1b" stroke-width="4" stroke-linejoin="round">
+    <circle cx="50" cy="30" r="10"/>
+    <path d="M40 42 h20 l-3 6 h-14 z"/>
+    <path d="M43 48 h14 c0 12 5 19 9 25 h-32 c4 -6 9 -13 9 -25 z"/>
+    <rect x="30" y="73" width="40" height="8" rx="3"/>
+  </g>
+</svg>
