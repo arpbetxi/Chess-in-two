@@ -62,3 +62,14 @@ function doGet() {
 function reply(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
+
+/**
+ * Ejecútala una vez desde el editor (elige "autorizar" y pulsa Ejecutar) para conceder
+ * los permisos que necesita el buzón: editar esta hoja de cálculo y enviarte correos.
+ * Al autorizar, marca todas las casillas ("Seleccionar todo").
+ */
+function autorizar() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const quota = MailApp.getRemainingDailyQuota();
+  Logger.log('Permisos correctos. Hoja: ' + ss.getName() + '. Correos disponibles hoy: ' + quota);
+}

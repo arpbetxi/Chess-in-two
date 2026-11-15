@@ -12,8 +12,9 @@ Las sugerencias del juego se guardan en una hoja de cálculo de Google y además
    - **Ejecutar como:** Yo.
    - **Quién tiene acceso:** Cualquier usuario.
 6. Pulsa **Implementar** y autoriza el acceso. Google avisará de que la aplicación no está verificada; es normal, porque el script es tuyo. Pulsa **Configuración avanzada → Ir a … (no seguro) → Permitir**.
-7. Copia la **URL de la aplicación web**, que termina en `/exec`.
-8. Pega esa URL en `config.js`, en `suggestionsUrl`.
+7. De vuelta en el editor, elige la función **autorizar** en el desplegable de arriba y pulsa **▶ Ejecutar**. Si pide permisos, marca **todas** las casillas ("Seleccionar todo") y pulsa **Continuar**. En el registro debe salir "Permisos correctos".
+8. Copia la **URL de la aplicación web**, que termina en `/exec`.
+9. Pega esa URL en `config.js`, en `suggestionsUrl`.
 
 ## Revisar las sugerencias
 
