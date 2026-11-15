@@ -1,6 +1,6 @@
 # Próximos pasos
 
-Ideas anotadas el 15 de noviembre de 2026 para trabajar en ellas el fin de semana del 21-22 de noviembre. Todavía no hay nada decidido sobre cómo hacerlas.
+Ideas anotadas el 15 de noviembre de 2026 para retomarlas más adelante. Todavía no hay nada decidido sobre cómo hacerlas.
 
 ## 1. Web con varios juegos
 Una web donde se pueda entrar a jugar distintos juegos que se vayan ocurriendo. "Ajedrez con cartas" sería el primero.
