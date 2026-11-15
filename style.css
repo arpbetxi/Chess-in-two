@@ -386,3 +386,77 @@ button.cap-piece.chosen { border-color: #2f9e62; background: #2c5040; }
 .manual-card h4 { margin: 0 0 4px; font-size: 1rem; }
 .manual-card .copies { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
 .manual-card p { margin: 0; }
+
+/* ---------- Carta robada en grande ---------- */
+.card-reveal {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(10, 12, 16, 0.68);
+  cursor: pointer;
+  animation: reveal-bg-in 0.25s ease-out;
+}
+.card-reveal.hidden { display: none; }
+.card-reveal.leaving { animation: reveal-out 0.35s ease-in forwards; }
+.reveal-who, .reveal-desc, .reveal-hint {
+  color: #fff;
+  text-align: center;
+  max-width: min(360px, 90vw);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  animation: reveal-text-in 0.3s ease-out 0.45s forwards;
+}
+.reveal-who { font-size: 1.15rem; font-weight: 700; }
+.reveal-desc { font-size: 1rem; line-height: 1.4; }
+.reveal-hint { font-size: 0.8rem; color: #cfd5de; }
+
+.reveal-flip {
+  position: relative;
+  width: 210px;
+  height: 294px;
+  transform-style: preserve-3d;
+  animation: reveal-flip-in 0.7s cubic-bezier(0.2, 0.8, 0.25, 1.15) forwards;
+}
+.reveal-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 22px;
+}
+.reveal-back {
+  transform: rotateY(180deg);
+  background: repeating-linear-gradient(45deg, #39414d, #39414d 14px, #2f3640 14px, #2f3640 28px);
+  border: 6px solid #5c6675;
+}
+.reveal-front .card {
+  width: 100%;
+  height: 100%;
+  border-radius: 22px;
+  border-width: 6px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+.reveal-front .card .sym { font-size: 7rem; }
+.reveal-front .card .art { width: 150px; height: 150px; }
+.reveal-front .card .name { font-size: 1.25rem; margin-top: 10px; }
+
+@keyframes reveal-bg-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes reveal-flip-in {
+  0% { transform: translateY(40vh) rotateY(180deg) scale(0.35); }
+  55% { transform: translateY(0) rotateY(180deg) scale(1); }
+  100% { transform: rotateY(0deg) scale(1); }
+}
+@keyframes reveal-text-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes reveal-out { to { opacity: 0; transform: scale(0.85); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .card-reveal, .card-reveal.leaving, .reveal-flip, .reveal-who, .reveal-desc, .reveal-hint {
+    animation: none;
+    opacity: 1;
+  }
+}

@@ -280,6 +280,7 @@
     }
     const card = state.deck.pop();
     state.card = card;
+    state.drawCount = (state.drawCount || 0) + 1; // cuántas cartas se han robado en la partida
     state.lastConverted = [];
     state.lastCard = { card: card, player: state.current };
     const who = playerLabel(state, state.current);

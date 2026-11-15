@@ -34,7 +34,10 @@
     mas4: 'Ruleta: se eligen al azar 4 piezas rivales (nunca el rey) y pasan a tu bando. Puede tocar un peón… o la dama.',
     sentido: 'Se gira el tablero: los jugadores intercambian colores. Quien llevaba blancas pasa a llevar negras, con sus piezas y capturas.',
   };
-  let lastDeckSize = null;  // para animar solo las cartas recién robadas
+  let lastDrawCount = null; // para animar solo las cartas recién robadas
+  const REVEAL_MS = 2200;   // cuánto se ve la carta en grande
+  let revealTimer = null;
+  let revealUntil = 0;      // el bot espera a que termine la animación
   const SAVE_KEY = 'ajedrezCartas.partidaOnline';
 
   const BOT_PLAYER = 2;
@@ -185,8 +188,10 @@
     const slot = $('cardView');
     slot.innerHTML = '';
     // La carta recién robada entra con una pequeña animación
-    const isNew = lastDeckSize !== null && state.deck.length !== lastDeckSize;
-    lastDeckSize = state.deck.length;
+    const drawCount = state.drawCount || 0;
+    const isNew = lastDrawCount !== null && drawCount > lastDrawCount;
+    lastDrawCount = drawCount;
+    if (isNew && state.lastCard) showReveal(state.lastCard.card, state.lastCard.player);
     if (state.card) {
       const ce = cardElement(state.card, false);
       if (isNew) ce.classList.add('fresh');
@@ -313,15 +318,60 @@
     scheduleBot();
   }
 
+  // ---------- Carta robada en grande ----------
+  function whoDrew(player) {
+    if (mode === 'local' || !mode) return 'Jugador ' + player + ' roba';
+    if (player === myPlayer) return 'Has robado';
+    return mode === 'bot' ? 'El bot roba' : 'Tu rival roba';
+  }
+
+  function showReveal(card, player) {
+    const box = $('cardReveal');
+    const front = $('revealFront');
+    front.innerHTML = '';
+    front.appendChild(cardElement(card, false));
+    $('revealWho').textContent = whoDrew(player);
+    $('revealDesc').textContent = card.kind === 'num' ? MANUAL_TEXT.num(card.n) : MANUAL_TEXT[card.kind];
+    // Reinicia las animaciones aunque ya se estuviera mostrando otra carta
+    box.classList.add('hidden');
+    box.classList.remove('leaving');
+    void box.offsetWidth;
+    box.classList.remove('hidden');
+    clearTimeout(revealTimer);
+    revealUntil = Date.now() + REVEAL_MS + 350;
+    revealTimer = setTimeout(hideReveal, REVEAL_MS);
+  }
+
+  function hideReveal() {
+    const box = $('cardReveal');
+    if (box.classList.contains('hidden') || box.classList.contains('leaving')) return;
+    clearTimeout(revealTimer);
+    box.classList.add('leaving');
+    revealUntil = Date.now() + 350;
+    revealTimer = setTimeout(function () {
+      box.classList.add('hidden');
+      box.classList.remove('leaving');
+      revealUntil = 0;
+    }, 350);
+  }
+
+  $('cardReveal').addEventListener('click', hideReveal);
+  document.addEventListener('keydown', function (e) {
+    if ((e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') && !$('cardReveal').classList.contains('hidden')) hideReveal();
+  });
+
   // ---------- Bot ----------
   function scheduleBot() {
     if (mode !== 'bot' || state.phase === 'over' || state.current !== BOT_PLAYER || botTimer) return;
+    // Si se está mostrando una carta en grande, el bot espera a que termine
+    const wait = Math.max(BOT_DELAY, revealUntil - Date.now() + 250);
     botTimer = setTimeout(function () {
       botTimer = null;
       if (mode !== 'bot' || state.phase === 'over' || state.current !== BOT_PLAYER) return;
+      if (Date.now() < revealUntil) { scheduleBot(); return; }
       const action = Bot.nextAction(state, botLevel);
       if (action && applyAction(action, BOT_PLAYER)) afterAction();
-    }, BOT_DELAY);
+    }, wait);
   }
 
   function stopBot() {
