@@ -683,10 +683,6 @@
       row.appendChild(num);
       rows.appendChild(row);
     });
-    const ties = document.createElement('div');
-    ties.className = 'score-row ties';
-    ties.innerHTML = '<span class="who">Tablas</span><span class="num">' + (score.ties || 0) + '</span>';
-    rows.appendChild(ties);
   }
 
   $('scoreReset').addEventListener('click', function () {
