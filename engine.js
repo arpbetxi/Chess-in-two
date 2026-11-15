@@ -21,6 +21,17 @@
     { kind: 'mas4', count: 1 },    // +4 Ruleta: 4 piezas rivales al azar pasan a tu bando
   ];
 
+  // ---------- Conjuntos de reglas ----------
+  // 'actual':   se pueden encadenar capturas; si amenazas al rey rival, tu turno termina.
+  // 'original': (v1, oculta) una captura termina el turno; amenazar al rey no tiene efecto.
+  //             Ver reglas/reglamento-v1-captura-termina-turno.md
+  const RULESETS = {
+    actual: { captureEndsTurn: false, threatEndsTurn: true },
+    original: { captureEndsTurn: true, threatEndsTurn: false },
+  };
+  const DEFAULT_RULESET = 'actual';
+  function rulesOf(state) { return RULESETS[(state && state.rules) || DEFAULT_RULESET] || RULESETS[DEFAULT_RULESET]; }
+
   const PIECE_NAMES = { p: 'peón', n: 'caballo', b: 'alfil', r: 'torre', q: 'dama', k: 'rey' };
   const COLOR_NAMES = { w: 'blancas', b: 'negras' };
 
@@ -38,7 +49,7 @@
 
   function cardDescription(card) {
     switch (card.kind) {
-      case 'num': return 'Haces ' + cardName(card) + ' seguidos. Si capturas, el turno termina.';
+      case 'num': return 'Haces ' + cardName(card) + ' seguidos. Si amenazas al rey rival, el turno termina.';
       case 'bloqueo': return 'Pierdes el turno.';
       case 'color': return 'Conviertes 1 pieza rival (no el rey).';
       case 'mas2': return 'Revives hasta 2 piezas capturadas de tu color en tu mitad del tablero.';
@@ -93,8 +104,9 @@
   function pawnStartRow(color) { return color === 'w' ? 6 : 1; }
 
   // ---------- Estado de la partida ----------
-  function newGame(rng) {
+  function newGame(rng, rules) {
     return {
+      rules: RULESETS[rules] ? rules : DEFAULT_RULESET, // conjunto de reglas de esta partida
       board: createBoard(),
       captured: { w: [], b: [] },       // piezas capturadas de cada color (tipos)
       playerColor: { 1: 'w', 2: 'b' },  // qué color lleva cada jugador
@@ -405,14 +417,33 @@
       finish(state, { type: 'win', player: state.current, reason: 'Rey capturado' });
       return true;
     }
-    if (captured && state.movesLeft > 0) {
-      // Regla: una captura termina el turno aunque queden movimientos
+    const rules = rulesOf(state);
+    if (rules.captureEndsTurn && captured && state.movesLeft > 0) {
+      // Reglas originales: una captura termina el turno aunque queden movimientos
       addLog(state, '✋ La captura termina el turno.');
+      state.movesLeft = 0;
+    }
+    if (rules.threatEndsTurn && state.movesLeft > 0 && threatensEnemyKing(state, myColor(state))) {
+      // Reglas actuales: si dejas al rey rival amenazado, tu turno termina
+      addLog(state, '⚠️ ¡Rey amenazado! El turno termina.');
       state.movesLeft = 0;
     }
     if (state.movesLeft === 0) endTurn(state);
     else checkStalemate(state);
     return true;
+  }
+
+  // ¿Alguna pieza de `color` podría capturar al rey rival con su próximo movimiento?
+  function threatensEnemyKing(state, color) {
+    let king = null;
+    for (let r = 0; r < 8 && !king; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = state.board[r][c];
+        if (p && p.type === 'k' && p.color !== color) { king = [r, c]; break; }
+      }
+    }
+    if (!king) return false;
+    return allMoves(state, color).some(function (m) { return m.to[0] === king[0] && m.to[1] === king[1]; });
   }
 
   function canConvert(state, r, c) {
@@ -467,6 +498,9 @@
   const Engine = {
     restore: restore,
     DECK_SPEC: DECK_SPEC,
+    RULESETS: RULESETS,
+    DEFAULT_RULESET: DEFAULT_RULESET,
+    threatensEnemyKing: threatensEnemyKing,
     PIECE_NAMES: PIECE_NAMES,
     COLOR_NAMES: COLOR_NAMES,
     newGame: newGame,

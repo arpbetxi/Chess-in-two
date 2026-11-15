@@ -37,6 +37,7 @@
   // Copia ligera del estado para simular sin tocar la partida real
   function clone(s) {
     return {
+      rules: s.rules,
       board: s.board.map(function (row) {
         return row.map(function (p) { return p ? { id: p.id, type: p.type, color: p.color, moved: p.moved } : null; });
       }),

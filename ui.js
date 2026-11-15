@@ -26,7 +26,7 @@
   const MANUAL_TEXT = {
     num: function (n) {
       return 'Haces ' + (n === 1 ? '1 movimiento' : n + ' movimientos seguidos') +
-        '. Si capturas una pieza, el turno termina antes.';
+        '. Puedes capturar varias piezas, pero si dejas al rey rival amenazado, tu turno termina.';
     },
     bloqueo: 'Pierdes el turno: no mueves nada.',
     color: 'Eliges una pieza rival (cualquiera menos el rey) y pasa a ser tuya en la misma casilla.',
