@@ -454,9 +454,9 @@ button.cap-piece.chosen { border-color: #2f9e62; background: #2c5040; }
 @keyframes reveal-text-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes reveal-out { to { opacity: 0; transform: scale(0.85); } }
 
+/* Con "reducir animaciones" activado en el sistema: sin vuelo ni giro, solo un fundido suave */
 @media (prefers-reduced-motion: reduce) {
-  .card-reveal, .card-reveal.leaving, .reveal-flip, .reveal-who, .reveal-desc, .reveal-hint {
-    animation: none;
-    opacity: 1;
-  }
+  .reveal-flip { animation: reveal-soft-in 0.35s ease-out forwards; }
+  .reveal-back { display: none; }
 }
+@keyframes reveal-soft-in { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: none; } }
