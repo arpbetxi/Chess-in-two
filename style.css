@@ -505,3 +505,16 @@ button.cap-piece.chosen { border-color: #2f9e62; background: #2c5040; }
 @media (max-width: 700px) {
   .suggest-fab { right: 10px; bottom: 10px; padding: 7px 12px; font-size: 0.8rem; }
 }
+
+/* ---------- Rey amenazado ---------- */
+.sq.king-threat {
+  background-image: radial-gradient(circle, rgba(235, 40, 40, 0.95) 0%, rgba(235, 40, 40, 0.55) 45%, rgba(235, 40, 40, 0) 78%);
+  animation: king-threat-pulse 1.4s ease-in-out infinite;
+}
+@keyframes king-threat-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 3px rgba(235, 40, 40, 0.9); }
+  50% { box-shadow: inset 0 0 0 3px rgba(235, 40, 40, 0.35); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sq.king-threat { animation: none; box-shadow: inset 0 0 0 3px rgba(235, 40, 40, 0.9); }
+}

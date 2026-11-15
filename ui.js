@@ -107,12 +107,31 @@
     return el;
   }
 
+  // Casillas de los reyes que el rival podría capturar con su próximo movimiento
+  function threatenedKings() {
+    const kings = [];
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = state.board[r][c];
+        if (p && p.type === 'k') kings.push({ r: r, c: c, color: p.color });
+      }
+    }
+    const out = {};
+    for (const k of kings) {
+      const enemy = k.color === 'w' ? 'b' : 'w';
+      const hit = Engine.allMoves(state, enemy).some(function (m) { return m.to[0] === k.r && m.to[1] === k.c; });
+      if (hit) out[k.r + ',' + k.c] = true;
+    }
+    return out;
+  }
+
   // ---------- Dibujo ----------
   function renderBoard() {
     boardEl.innerHTML = '';
     boardEl.classList.toggle('waiting', online() && !canAct());
     const flipped = isFlipped();
     const active = canAct();
+    const threats = threatenedKings();
     const targets = {};
     for (const m of selMoves) targets[m.to[0] + ',' + m.to[1]] = m;
     const reviveType = active && state.phase === 'revive' && reviveChoice !== null
@@ -132,6 +151,7 @@
           sq.classList.add('last');
         }
         if (selected && selected[0] === r && selected[1] === c) sq.classList.add('selected');
+        if (threats[r + ',' + c]) sq.classList.add('king-threat');
         if ((state.lastConverted || []).some(function (x) { return x[0] === r && x[1] === c; })) {
           sq.classList.add('converted');
         }
