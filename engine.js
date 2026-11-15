@@ -1,5 +1,5 @@
 /*
- * Ajedrez con cartas — motor de reglas
+ * In 2 Chess — motor de reglas
  * --------------------------------------
  * Toda la lógica del juego, sin nada de interfaz.
  * Coordenadas: board[fila][columna]; fila 0 = fila 8 del tablero (lado negro),

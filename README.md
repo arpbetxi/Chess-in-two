@@ -1,4 +1,4 @@
-# Ajedrez con cartas
+# In 2 Chess
 
 Variante de ajedrez en la que cada turno se roba una carta que decide cuántos movimientos haces o qué efecto especial se aplica.
 

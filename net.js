@@ -1,5 +1,5 @@
 /*
- * Ajedrez con cartas — conexión online entre dos navegadores (PeerJS)
+ * In 2 Chess — conexión online entre dos navegadores (PeerJS)
  * El anfitrión crea una sala con un código; el invitado se une con ese código.
  * Los navegadores se conectan directamente; el servidor gratuito de PeerJS
  * solo se usa para que se encuentren.

@@ -1,5 +1,5 @@
 /*
- * Ajedrez con cartas — bot
+ * In 2 Chess — bot
  * -------------------------
  * Usa el mismo motor de reglas (engine.js). En su turno prueba las combinaciones
  * de movimientos que permite su carta, puntúa la posición resultante y elige la mejor.

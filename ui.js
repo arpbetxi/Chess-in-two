@@ -1,5 +1,5 @@
 /*
- * Ajedrez con cartas — interfaz
+ * In 2 Chess — interfaz
  * Dibuja el tablero y el panel, y convierte los clics en "acciones".
  *
  * Modos:

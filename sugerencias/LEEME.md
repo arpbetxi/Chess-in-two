@@ -4,7 +4,7 @@ Las sugerencias del juego se guardan en una hoja de cálculo de Google y además
 
 ## Instalación (una sola vez, unos 5 minutos)
 
-1. Crea una hoja de cálculo nueva en [sheets.new](https://sheets.new) y ponle un nombre, por ejemplo "Sugerencias Ajedrez con cartas".
+1. Crea una hoja de cálculo nueva en [sheets.new](https://sheets.new) y ponle un nombre, por ejemplo "Sugerencias In 2 Chess".
 2. En el menú, ve a **Extensiones → Apps Script**.
 3. Borra lo que haya en el editor y pega todo el contenido de [`Codigo.gs`](Codigo.gs). Guarda con el icono del disquete.
 4. Arriba a la derecha, pulsa **Implementar → Nueva implementación**.

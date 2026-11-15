@@ -20,7 +20,7 @@ Ideas anotadas en noviembre de 2026 para retomarlas más adelante, sin fecha. Es
 - Serían cartas distintas, con efectos especiales que potencian el juego. Por ejemplo: **atravesar peones**.
 
 ## 3. Web con varios juegos (prioridad media)
-- Una web donde se pueda entrar a jugar distintos juegos que se vayan ocurriendo. "Ajedrez con cartas" sería el primero.
+- Una web donde se pueda entrar a jugar distintos juegos que se vayan ocurriendo. "In 2 Chess" sería el primero.
 - Conviene montarla antes del casino, porque el casino viviría dentro de ella y compartiría las cuentas de usuario.
 
 ## 4. Casino social con ranking (prioridad baja)

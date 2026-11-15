@@ -1,5 +1,5 @@
 /**
- * Buzón de sugerencias de "Ajedrez con cartas"
+ * Buzón de sugerencias de "In 2 Chess"
  * ---------------------------------------------
  * Este script se pega en una hoja de cálculo de Google (Extensiones → Apps Script).
  * Cada sugerencia enviada desde el juego:
