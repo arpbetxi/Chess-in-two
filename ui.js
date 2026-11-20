@@ -792,6 +792,7 @@
     let t;
     if (state.movesLeft > 1) t = 'Doble paso: te quedan 2 movimientos.';
     else if (state.movesThisTurn > 0) t = 'Haz tu segundo movimiento.';
+    else if (state.cardUsed) t = 'Carta usada. Ahora haz tu movimiento.';
     else t = 'Mueve una pieza' + (A.canUseCards(state) ? ', o usa antes una carta de tu mano.' : '.');
     if (state.turnCount[P] <= 1) t += ' En tu primer turno no se pueden usar cartas.';
     if (state.bloodlust === P) t += ' 🩸 Sed de sangre: si puedes capturar, estás obligado.';
@@ -907,7 +908,7 @@
       const p = document.createElement('p');
       p.innerHTML = '<strong></strong> · ';
       p.firstChild.textContent = card.name;
-      p.appendChild(document.createTextNode((card.type === 'accion' ? 'de acción (sustituye a tu movimiento)' : 'potenciadora (no gasta tu movimiento)') + '. ' + card.text));
+      p.appendChild(document.createTextNode((card.type === 'accion' ? (aPick.id === 'apuesta' ? 'de acción (te quita el movimiento)' : 'de acción (después mueves igual)') : 'potenciadora (cambia tu movimiento de este turno)') + '. ' + card.text));
       sel.appendChild(p);
       const allowed = myDecision && state.phase === 'turn' ? A.cardAllowed(state, aPick.id) : { ok: false, why: 'No es tu turno.' };
       if (!allowed.ok) {

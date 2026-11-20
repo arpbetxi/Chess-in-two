@@ -15,7 +15,7 @@
   };
 
   // type: 'potenciadora' (se juega antes de mover y no te quita el movimiento)
-  //       'accion'       (sustituye a tu movimiento)
+  //       'accion'       (se juega antes de mover; después mueves igual, salvo Apuesta)
   const CARDS = [
     {
       id: 'escudo', name: 'Escudo', rarity: 'inicial', type: 'accion', copies: 0,

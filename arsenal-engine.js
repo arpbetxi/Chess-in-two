@@ -2,6 +2,7 @@
  * In 2 Chess — motor del modo Arsenal
  * ------------------------------------
  * Ajedrez de un movimiento por turno; las cartas se acumulan en la mano.
+ * Cada turno tiene dos partes: primero, si quieres, una carta; después, el movimiento.
  * Reutiliza la generación de movimientos de engine.js y las cartas de arsenal.js.
  *
  * Acciones que acepta apply(state, action, player):
@@ -376,7 +377,7 @@
   function checkStuck(state) {
     if (state.phase !== 'turn') return;
     if (legalMoves(state).length) return;
-    if (state.movesThisTurn > 0 || state.buff) { endTurn(state); return; }
+    if (state.movesThisTurn > 0 || state.cardUsed) { endTurn(state); return; } // ya ha hecho algo este turno
     const canAct = playableCards(state).some(function (id) { return CARD[id].type === 'accion'; });
     if (!canAct) finish(state, { type: 'draw', reason: 'Ahogado: ' + name(state, state.current) + ' no puede mover' });
   }
@@ -556,7 +557,7 @@
         const p = b[t.sq[0]][t.sq[1]];
         state.shields.push({ id: p.id, owner: P });
         log(state, '🛡️ El ' + PIECE_NAMES[p.type] + ' de ' + sq(t.sq[0], t.sq[1]) + ' queda protegido hasta el final del próximo turno rival.');
-        endTurn(state);
+        checkStuck(state);              // después de la carta, el jugador mueve
         return true;
       }
       case 'enroque': {
@@ -566,7 +567,7 @@
         pa.moved = true; pb.moved = true;
         state.lastMove = { from: t.a, to: t.b };
         log(state, '🔁 Intercambian su sitio el ' + PIECE_NAMES[pa.type] + ' de ' + sq(t.a[0], t.a[1]) + ' y el ' + PIECE_NAMES[pb.type] + ' de ' + sq(t.b[0], t.b[1]) + '.');
-        endTurn(state);
+        checkStuck(state);              // después de la carta, el jugador mueve
         return true;
       }
       case 'apuesta':
@@ -591,7 +592,7 @@
         if (ruletaCheck(state, []).ok) { // no cabe ninguna pieza
           state.ruleta = null;
           log(state, 'No hay ninguna pieza que quepa en ese número.');
-          endTurn(state);
+          checkStuck(state);
         } else {
           state.phase = 'ruleta';
         }
@@ -600,7 +601,7 @@
       case 'trampa':
         state.traps.push({ r: t.sq[0], c: t.sq[1], owner: P });
         log(state, '🪤 ' + name(state, P) + ' coloca una trampa oculta en algún lugar del tablero.');
-        endTurn(state);
+        checkStuck(state);              // después de la carta, el jugador mueve
         return true;
       case 'congelar': {
         const ids = [], squares = [];
@@ -614,7 +615,7 @@
         }
         state.frozen = { ids: ids, player: other(P), squares: squares };
         log(state, '❄️ Zona congelada alrededor de ' + sq(t.sq[0], t.sq[1]) + ': ' + ids.length + (ids.length === 1 ? ' pieza no podrá' : ' piezas no podrán') + ' moverse en el próximo turno.');
-        endTurn(state);
+        checkStuck(state);              // después de la carta, el jugador mueve
         return true;
       }
       case 'posesion': {
@@ -627,7 +628,7 @@
         log(state, '😈 Posesión: el ' + PIECE_NAMES[p.type] + ' rival de ' + sq(t.from[0], t.from[1]) + ' captura a su propio ' + PIECE_NAMES[captured.type] + ' en ' + sq(t.to[0], t.to[1]) + '.');
         lossDraw(state, captured);
         checkTrap(state, t.to[0], t.to[1]);
-        endTurn(state);
+        checkStuck(state);              // después de la carta, el jugador mueve
         return true;
       }
     }
@@ -713,7 +714,6 @@
         state.phase = 'turn';
         log(state, '🦝 ' + name(state, P) + ' le roba una carta a ' + name(state, other(P)) + '.');
         state.queue.push(stolen);
-        state.endAfter = true;
         processQueue(state);
         return true;
       }
@@ -730,7 +730,7 @@
         log(state, '🎡 Eliminadas por la Ruleta: ' + (names.length ? names.join(', ') : 'ninguna') + '.');
         state.ruleta = null;
         state.phase = 'turn';
-        endTurn(state);
+        checkStuck(state);
         return true;
       }
     }
@@ -817,71 +817,82 @@
     return best;
   }
 
-  // Valor esperado de girar la Ruleta (media de las 8 casillas)
-  function ruletaExpected(view, P) {
+  // Puntuación tras la carta, contando el movimiento que viene después
+  function afterCard(c, P, level) {
+    if (c.phase === 'turn' && c.current === P) {
+      const r = bestMove(c, P, level, 1);
+      if (r.move) return r.score;
+    }
+    return score(c, P);
+  }
+
+  // Valor esperado de girar la Ruleta (media de las 8 casillas), con el movimiento posterior
+  function ruletaExpected(view, P, level) {
     let total = 0;
     for (let i = 0; i < RULETA.length; i++) {
       const c = clone(view);
+      c.cardUsed = true;
       c.ruleta = { value: RULETA[i], idx: i, player: P };
-      if (ruletaCheck(c, []).ok) { total += score(c, P); continue; }
-      c.phase = 'ruleta';
-      const ch = ruletaChoice(c, P);
-      total += ch ? ch.score : score(c, P);
+      if (!ruletaCheck(c, []).ok) {
+        c.phase = 'ruleta';
+        const ch = ruletaChoice(c, P);
+        if (ch) apply(c, { type: 'ruletaPick', squares: ch.squares }, P);
+      }
+      c.ruleta = null;
+      c.phase = 'turn';
+      total += afterCard(c, P, level);
     }
     return total / RULETA.length;
   }
 
   // Candidatos con cartas de acción: { action, score } (score comparable con el de mover)
-  function actionCandidates(state, view, P, base) {
+  function actionCandidates(state, view, P, base, level) {
     const out = [];
     const cards = playableCards(state);
     const has = function (id) { return cards.indexOf(id) >= 0; };
-    const pass = score(view, P);                 // no mover: el tablero se queda igual
-    const tryPlay = function (id, target) {
-      const c = clone(view);
-      if (!playCard(c, id, target)) return null;
-      return score(c, P);
+    const pass = score(view, P);                 // sin mover: el tablero se queda igual
+    // Prueba varios objetivos: primero un filtro rápido y luego, en los mejores, con el movimiento posterior
+    const best = function (id, targets, extra) {
+      const quick = [];
+      for (const t of targets) {
+        const c = clone(view);
+        if (!playCard(c, id, t)) continue;
+        quick.push({ t: t, c: c, s: score(c, P) + (extra ? extra(t) : 0) });
+      }
+      quick.sort(function (x, y) { return y.s - x.s; });
+      quick.slice(0, 6).forEach(function (q) {
+        out.push({ action: { type: 'play', card: id, target: q.t }, score: afterCard(q.c, P, level) + (extra ? extra(q.t) : 0) });
+      });
     };
 
     // Posesión: la captura que más gane
     if (has('posesion')) {
-      for (const f of possessionPieces(view)) {
-        for (const m of possessionMoves(view, f[0], f[1])) {
-          const t = { from: f, to: m.to };
-          const sc = tryPlay('posesion', t);
-          if (sc !== null) out.push({ action: { type: 'play', card: 'posesion', target: t }, score: sc });
-        }
-      }
+      const ts = [];
+      for (const f of possessionPieces(view)) for (const m of possessionMoves(view, f[0], f[1])) ts.push({ from: f, to: m.to });
+      best('posesion', ts);
     }
     // Escudo: proteger la pieza propia que esté en peligro
-    if (has('escudo')) {
-      for (const q of ownPieces(view)) {
-        const sc = tryPlay('escudo', { sq: q });
-        if (sc !== null && sc > pass + 0.5) out.push({ action: { type: 'play', card: 'escudo', target: { sq: q } }, score: sc });
-      }
-    }
+    if (has('escudo')) best('escudo', ownPieces(view).map(function (q) { return { sq: q }; }));
     // Congelar: la zona que más amenazas o material rival bloquea
     if (has('congelar')) {
       const rivalColor = colorOf(view, other(P));
-      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
-        let frozenMaterial = 0;
-        for (let rr = r - 1; rr <= r + 1; rr++) for (let cc = c - 1; cc <= c + 1; cc++) {
+      const material = function (t) {
+        let m = 0;
+        for (let rr = t.sq[0] - 1; rr <= t.sq[0] + 1; rr++) for (let cc = t.sq[1] - 1; cc <= t.sq[1] + 1; cc++) {
           const p = inside(rr, cc) && view.board[rr][cc];
-          if (p && p.color === rivalColor && p.type !== 'k') frozenMaterial += VALUES[p.type];
+          if (p && p.color === rivalColor && p.type !== 'k') m += VALUES[p.type];
         }
-        if (!frozenMaterial) continue;
-        const sc = tryPlay('congelar', { sq: [r, c] });
-        if (sc !== null) out.push({ action: { type: 'play', card: 'congelar', target: { sq: [r, c] } }, score: sc + 0.05 * frozenMaterial });
-      }
+        return m;
+      };
+      const ts = [];
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) if (material({ sq: [r, c] })) ts.push({ sq: [r, c] });
+      best('congelar', ts, function (t) { return 0.05 * material(t); });
     }
     // Enroque: el intercambio de dos piezas propias que mejor quede
     if (has('enroque')) {
-      const own = ownPieces(view);
-      for (let i = 0; i < own.length; i++) for (let j = i + 1; j < own.length; j++) {
-        const t = { a: own[i], b: own[j] };
-        const sc = tryPlay('enroque', t);
-        if (sc !== null) out.push({ action: { type: 'play', card: 'enroque', target: t }, score: sc });
-      }
+      const own = ownPieces(view), ts = [];
+      for (let i = 0; i < own.length; i++) for (let j = i + 1; j < own.length; j++) ts.push({ a: own[i], b: own[j] });
+      best('enroque', ts);
     }
     // Trampa: en una casilla vacía a la que puedan llegar piezas rivales valiosas
     if (has('trampa')) {
@@ -899,22 +910,22 @@
         if (state.board[q[0]][q[1]] || state.traps.some(function (t) { return t.r === q[0] && t.c === q[1]; })) return;
         if (reach[k] > bestW) { bestW = reach[k]; bestSq = q; }
       });
-      if (bestSq) out.push({ action: { type: 'play', card: 'trampa', target: { sq: bestSq } }, score: pass + Math.min(bestW, 9) * 0.12 });
+      if (bestSq) out.push({ action: { type: 'play', card: 'trampa', target: { sq: bestSq } }, score: base.score + Math.min(bestW, 9) * 0.12 });
     }
     // Ruleta: si va perdiendo, o si en promedio sale a cuenta
     if (has('ruleta')) {
-      const ev = ruletaExpected(view, P);
+      const ev = ruletaExpected(view, P, level);
       const losing = materialDiff(view, P) <= -3;
       out.push({ action: { type: 'play', card: 'ruleta' }, score: losing ? ev + 1 : ev });
     }
-    // Apuesta: con la mano casi vacía y si mover no corre prisa
+    // Apuesta (te quita el movimiento): con la mano casi vacía y si mover no corre prisa
     if (has('apuesta') && state.hands[P].length <= 2) {
       out.push({ action: { type: 'play', card: 'apuesta' }, score: pass + (state.hands[P].length === 1 ? 0.8 : 0.3) });
     }
-    // Robo: si el rival acumula cartas
+    // Robo: si el rival acumula cartas (después mueve igual)
     if (has('robo')) {
       const n = state.hands[other(P)].length;
-      out.push({ action: { type: 'play', card: 'robo' }, score: pass + (n >= 3 ? 0.9 : n === 2 ? 0.5 : 0.1) });
+      out.push({ action: { type: 'play', card: 'robo' }, score: base.score + (n >= 3 ? 0.9 : n === 2 ? 0.5 : 0.1) });
     }
     return out;
   }
@@ -966,7 +977,7 @@
           }
           // Cartas de acción (en fácil, solo a veces)
           if (level !== 'facil' || Math.random() < 0.5) {
-            for (const cand of actionCandidates(state, view, P, base)) {
+            for (const cand of actionCandidates(state, view, P, base, level)) {
               const margin = base.move ? 0.4 : -Infinity;
               if (cand.score > base.score + margin && (!choice || cand.score > choice.score)) choice = cand;
             }
