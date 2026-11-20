@@ -577,3 +577,114 @@ button.cap-piece.chosen { border-color: #2f9e62; background: #2c5040; }
   line-height: 1.2;
 }
 .auto-draw input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); flex-shrink: 0; cursor: pointer; }
+
+/* ---------- Pantalla inicial: elegir modo ---------- */
+.mode-select {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(79, 163, 224, 0.18), transparent 45%),
+    radial-gradient(circle at 85% 90%, rgba(155, 79, 209, 0.18), transparent 45%),
+    var(--bg);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px;
+}
+.mode-select.hidden { display: none; }
+.mode-inner { width: min(920px, 100%); text-align: center; }
+.mode-brand { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.mode-brand h1 { margin: 0; font-size: 2.2rem; letter-spacing: 0.02em; }
+.mode-sub { color: var(--muted); margin: 8px 0 24px; font-size: 1.05rem; }
+.mode-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.mode-card {
+  position: relative;
+  background: var(--panel);
+  border-radius: 18px;
+  padding: 22px 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  border: 2px solid transparent;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s, border-color 0.15s;
+}
+.mode-card:hover { transform: translateY(-3px); }
+.mode-destino { border-color: rgba(79, 163, 224, 0.55); }
+.mode-arsenal { border-color: rgba(155, 79, 209, 0.55); }
+.mode-card h2 { margin: 4px 0 0; font-size: 1.7rem; }
+.mode-card p { margin: 0; color: #d3d8df; line-height: 1.5; }
+.mode-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: #5a2386;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.mode-art { display: flex; justify-content: center; align-items: flex-end; height: 130px; gap: 0; margin-bottom: 4px; }
+.mini-card {
+  width: 74px;
+  height: 104px;
+  border-radius: 10px;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+  margin: 0 -10px;
+}
+.mini-card img { width: 56px; height: 56px; }
+.mini-card:first-child { transform: rotate(-12deg) translateY(6px); }
+.mini-card:last-child { transform: rotate(12deg) translateY(6px); }
+.mini-card.big { width: 86px; height: 120px; z-index: 1; }
+.mini-card.big img { width: 66px; height: 66px; }
+.mini-card.num { background: linear-gradient(160deg, #2f7dbf, #1f5a8c); }
+.mini-card.sentido { background: linear-gradient(160deg, #d98a26, #a35f10); }
+.mode-tags { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 2px 0 0; }
+.mode-tags li { background: #343a43; color: var(--muted); font-size: 0.8rem; padding: 3px 10px; border-radius: 999px; }
+.mode-actions { display: flex; gap: 10px; margin-top: 6px; }
+.mode-actions button { flex: 1; padding: 11px 14px; font-size: 1rem; }
+.mode-arsenal .mode-actions button:first-child { background: #6b2c99; }
+.back-modes { align-self: flex-start; font-size: 0.85rem; padding: 0; margin-bottom: -4px; }
+
+/* ---------- Cartas de Arsenal (marco por rareza) ---------- */
+.a-inicial { background: linear-gradient(160deg, #c9a23c, #8a6a17); }
+.a-comun { background: linear-gradient(160deg, #6b7684, #454e5a); }
+.a-rara { background: linear-gradient(160deg, #2f7dbf, #1c4f80); }
+.a-epica { background: linear-gradient(160deg, #9b4fd1, #5a2386); }
+.acard {
+  width: 100px;
+  height: 140px;
+  border-radius: 12px;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
+}
+.acard img { width: 70px; height: 70px; }
+.acard .name { font-size: 0.75rem; font-weight: 700; margin-top: 4px; color: #fff; }
+.rarity-pill { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-left: 6px; vertical-align: middle; color: #fff; }
+.ascenso-row { display: flex; gap: 12px; align-items: center; }
+.ascenso-row img { flex-shrink: 0; background: linear-gradient(160deg, #c9a23c, #8a6a17); border-radius: 12px; padding: 4px; }
+
+@media (max-width: 700px) {
+  .mode-select { padding: 20px 12px; }
+  .mode-brand h1 { font-size: 1.7rem; }
+  .mode-grid { grid-template-columns: 1fr; }
+  .mode-art { height: 112px; }
+}

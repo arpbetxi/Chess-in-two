@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#1e2126">
   <!-- ?v=... obliga al navegador a descargar la versión nueva tras cada cambio -->
-  <link rel="stylesheet" href="style.css?v=20261115m">
+  <link rel="stylesheet" href="style.css?v=20261120a">
 </head>
 <body>
   <header>
@@ -68,10 +68,111 @@
     </aside>
   </main>
 
+  <!-- Pantalla inicial: elegir el modo de juego -->
+  <div id="modeSelect" class="mode-select" role="dialog" aria-labelledby="modeTitle">
+    <div class="mode-inner">
+      <div class="mode-brand">
+        <img src="icons/favicon.svg" alt="" width="56" height="56">
+        <h1 id="modeTitle">In 2 Chess</h1>
+      </div>
+      <p class="mode-sub">Elige cómo quieres jugar</p>
+      <div class="mode-grid">
+        <section class="mode-card mode-destino">
+          <div class="mode-art" aria-hidden="true">
+            <div class="mini-card num">1</div>
+            <div class="mini-card num big">3</div>
+            <div class="mini-card sentido"><img src="cards/sentido.svg" alt=""></div>
+          </div>
+          <h2>Destino</h2>
+          <p>Cada turno robas una carta y ella decide por ti: cuántos movimientos haces o qué efecto se aplica.</p>
+          <ul class="mode-tags"><li>Una carta por turno</li><li>Caótico</li><li>Rápido</li></ul>
+          <div class="mode-actions">
+            <button id="playDestino">Jugar</button>
+            <button id="rulesDestino" class="secondary">Ver reglas</button>
+          </div>
+        </section>
+        <section class="mode-card mode-arsenal">
+          <span class="mode-badge">En desarrollo</span>
+          <div class="mode-art" aria-hidden="true">
+            <div class="mini-card a-rara"><img src="cards/arsenal/fantasma.svg" alt=""></div>
+            <div class="mini-card a-epica big"><img src="cards/arsenal/doblepaso.svg" alt=""></div>
+            <div class="mini-card a-inicial"><img src="cards/arsenal/escudo.svg" alt=""></div>
+          </div>
+          <h2>Arsenal</h2>
+          <p>Ajedrez de un movimiento por turno, pero vas guardando cartas en la mano y eliges el mejor momento para usarlas.</p>
+          <ul class="mode-tags"><li>Mano de cartas</li><li>Estratégico</li><li>Ascensos</li></ul>
+          <div class="mode-actions">
+            <button id="playArsenal" disabled title="Este modo todavía se está programando">Próximamente</button>
+            <button id="rulesArsenal" class="secondary">Ver reglas</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reglamento del modo Arsenal -->
+  <div id="arsenalModal" class="modal manual-modal hidden" role="dialog" aria-labelledby="arsenalTitle">
+    <div class="modal-box manual-box">
+      <div class="manual-head">
+        <h2 id="arsenalTitle">Reglas de Arsenal</h2>
+        <button id="arsenalClose" class="close-btn" aria-label="Cerrar">✕</button>
+      </div>
+      <p class="hint variant-note">Este modo todavía se está programando: estas son sus reglas previstas.</p>
+
+      <section>
+        <h3>Objetivo</h3>
+        <p>Se juega al ajedrez con <strong>un movimiento por turno</strong>, y gana quien <strong>captura el rey rival</strong>. Las cartas no se roban cada turno: se acumulan en tu mano y tú decides cuándo usarlas.</p>
+      </section>
+
+      <section>
+        <h3>Robar cartas</h3>
+        <ul>
+          <li>Empiezas con <strong>2 cartas</strong> del mazo y un <strong>Escudo</strong>.</li>
+          <li>Robas <strong>1 carta cada 3 turnos tuyos</strong>.</li>
+          <li>Robas <strong>1 carta cuando el rival te captura una pieza que no es peón</strong>.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>Tu mano</h3>
+        <ul>
+          <li>Máximo <strong>3 cartas</strong> (el Escudo inicial no cuenta). Si robas una cuarta, tienes que descartar una.</li>
+          <li>Tu rival ve <strong>cuántas</strong> cartas tienes, pero no cuáles. Las cartas descartadas sí las ve.</li>
+          <li><strong>Carta repetida:</strong> si robas una carta igual a otra que ya tienes, eliges entre descartar la nueva o <strong>combinar las dos</strong> en una carta al azar de la rareza superior. Dos épicas iguales no se pueden combinar.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>Usar cartas</h3>
+        <ul>
+          <li>Puedes usar <strong>1 carta por turno</strong>, y nunca en tu primer turno.</li>
+          <li><strong>Potenciadoras:</strong> se juegan antes de mover y cambian tu movimiento de ese turno.</li>
+          <li><strong>De acción:</strong> sustituyen a tu movimiento.</li>
+          <li>Ninguna carta puede capturar o eliminar al rey directamente.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>Ascenso</h3>
+        <div class="ascenso-row">
+          <img src="cards/arsenal/ascenso.svg" alt="" width="64" height="64">
+          <p>Cada carta que <strong>descartas</strong> te da puntos según su rareza: <strong>1</strong> común, <strong>2</strong> rara, <strong>3</strong> épica. Puedes descartar porque se te llena la mano o voluntariamente (cuenta como tu carta del turno). Con <strong><span id="arsenalAscPts">5</span> puntos</strong> asciendes una pieza propia: <span id="arsenalAscPath"></span>. El rey no asciende.</p>
+        </div>
+      </section>
+
+      <section>
+        <h3>Las cartas</h3>
+        <p class="hint">Mazo compartido de <span id="arsenalDeckTotal">40</span> cartas: <span id="arsenalDeckSplit"></span>.</p>
+        <div id="arsenalCards" class="manual-cards"></div>
+      </section>
+    </div>
+  </div>
+
   <!-- Menú inicial: online o local -->
   <div id="lobby" class="modal">
     <div class="modal-box lobby-box">
-      <p>In 2 Chess</p>
+      <button id="backToModes" class="link-btn back-modes">← Cambiar de modo</button>
+      <p>In 2 Chess · Destino</p>
       <div class="rules-row">
         <label for="playerName">Tu nombre (para el marcador)</label>
         <input id="playerName" maxlength="20" placeholder="Tu nombre" autocomplete="nickname">
@@ -221,10 +322,12 @@
       document.write('<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"><\/script>');
     }
   </script>
-  <script src="config.js?v=20261115m"></script>
-  <script src="engine.js?v=20261115m"></script>
-  <script src="net.js?v=20261115m"></script>
-  <script src="bot.js?v=20261115m"></script>
-  <script src="ui.js?v=20261115m"></script>
+  <script src="config.js?v=20261120a"></script>
+  <script src="engine.js?v=20261120a"></script>
+  <script src="net.js?v=20261120a"></script>
+  <script src="bot.js?v=20261120a"></script>
+  <script src="ui.js?v=20261120a"></script>
+  <script src="arsenal.js?v=20261120a"></script>
+  <script src="modes.js?v=20261120a"></script>
 </body>
 </html>

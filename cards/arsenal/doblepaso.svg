@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <title>Doble paso: dos movimientos en un turno</title>
+  <g transform="translate(34 60) scale(0.62) translate(-50 -52)" fill="#fff" stroke="#1b1b1b" stroke-width="4.84" stroke-linejoin="round" >
+    <circle cx="50" cy="30" r="10"/><path d="M40 42 h20 l-3 6 h-14 z"/>
+    <path d="M43 48 h14 c0 12 5 19 9 25 h-32 c4 -6 9 -13 9 -25 z"/><rect x="30" y="73" width="40" height="8" rx="3"/></g>
+  <path d="M64 62 L74 50 L84 62" fill="none" stroke="#1b1b1b" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M64 62 L74 50 L84 62" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M64 44 L74 32 L84 44" fill="none" stroke="#1b1b1b" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M64 44 L74 32 L84 44" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="74" y="86" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="18" text-anchor="middle" fill="#fff" stroke="#1b1b1b" stroke-width="1.5">x2</text>
+</svg>

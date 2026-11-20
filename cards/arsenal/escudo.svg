@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <title>Escudo: protege una pieza</title>
+  <path d="M50 8 L84 20 V46 C84 70 68 85 50 93 C32 85 16 70 16 46 V20 Z" fill="#fff" stroke="#1b1b1b" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M50 17 L76 26 V46 C76 64 64 76 50 83 C36 76 24 64 24 46 V26 Z" fill="#cfd8e3" stroke="#1b1b1b" stroke-width="1.5"/>
+  <g transform="translate(50 52) scale(0.5) translate(-50 -52)" fill="#1b1b1b" stroke="#1b1b1b" stroke-width="2.00" stroke-linejoin="round" >
+    <circle cx="50" cy="30" r="10"/><path d="M40 42 h20 l-3 6 h-14 z"/>
+    <path d="M43 48 h14 c0 12 5 19 9 25 h-32 c4 -6 9 -13 9 -25 z"/><rect x="30" y="73" width="40" height="8" rx="3"/></g>
+</svg>

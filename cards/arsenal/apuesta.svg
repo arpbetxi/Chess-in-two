@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <title>Apuesta: robas 2 cartas y pierdes tu movimiento</title>
+  <g stroke="#1b1b1b" stroke-width="3" stroke-linejoin="round">
+    <rect x="18" y="20" width="34" height="48" rx="5" fill="#3a6ea5" transform="rotate(-12 35 44)"/>
+    <rect x="40" y="16" width="34" height="48" rx="5" fill="#2f7dbf" transform="rotate(10 57 40)"/>
+  </g>
+  <text x="57" y="50" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="22" text-anchor="middle" fill="#fff" stroke="#1b1b1b" stroke-width="1.5" transform="rotate(10 57 40)">+2</text>
+  <circle cx="72" cy="76" r="15" fill="#fff" stroke="#1b1b1b" stroke-width="3"/>
+  <path d="M65 68 h14 l-7 8 l7 8 h-14 l7 -8 z" fill="#ae8a68" stroke="#1b1b1b" stroke-width="2" stroke-linejoin="round"/>
+  <line x1="62" y1="88" x2="83" y2="64" stroke="#c0392b" stroke-width="4" stroke-linecap="round"/>
+</svg>

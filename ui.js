@@ -914,6 +914,7 @@
   // Acceso desde la consola del navegador para pruebas (p. ej. ajedrez.state)
   window.ajedrez = {
     get state() { return state; },
+    openManual: openManual,
     render: render,
   };
 

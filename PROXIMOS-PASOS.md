@@ -5,7 +5,7 @@ Ideas anotadas en noviembre de 2026 para retomarlas más adelante, sin fecha. Es
 | Prioridad | Idea | Esfuerzo | Depende de |
 | --- | --- | --- | --- |
 | 1 · Alta | Separar el modo actual en Clásica y Caótica | Bajo | — |
-| 2 · Alta | Nuevo modo: cartas en la mano | Medio | — |
+| 2 · Alta | Modo Arsenal (cartas en la mano): reglas definidas, falta programarlo | Medio | — |
 | 3 · Media | Web con varios juegos | Medio | — |
 | 4 · Baja | Casino social con ranking | Alto | 3 |
 
@@ -14,7 +14,8 @@ Ideas anotadas en noviembre de 2026 para retomarlas más adelante, sin fecha. Es
 - **Caótica:** nuevas cartas y variantes que se vayan ocurriendo o que lleguen por el buzón de sugerencias. Por ejemplo: **ascender una pieza propia a un nivel superior**.
 - Es lo más rápido: se apoya en el mazo y el selector de variantes que ya existen.
 
-## 2. Nuevo modo: cartas en la mano (prioridad alta)
+## 2. Modo Arsenal: cartas en la mano (prioridad alta)
+- **Estado:** reglas, cartas, rarezas e ilustraciones definidas (`arsenal.js` y "Ver reglas" en la pantalla inicial). Falta programar la partida.
 - En lugar de robar una carta cada turno, se roban cartas **de vez en cuando**. La mecánica exacta está por definir.
 - Las cartas se guardan **en la mano** y el jugador decide cuándo usarlas.
 - Serían cartas distintas, con efectos especiales que potencian el juego. Por ejemplo: **atravesar peones**.

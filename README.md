@@ -10,10 +10,13 @@ Variante de ajedrez en la que cada turno se roba una carta que decide cuántos m
 - `style.css`: el aspecto.
 - `engine.js`: todas las reglas. `DECK_SPEC`, al principio del archivo, define la composición del mazo.
 - `ui.js`: el tablero, los clics y el menú.
+- `modes.js`: la pantalla inicial para elegir el modo (Destino o Arsenal) y el reglamento de Arsenal.
+- `arsenal.js`: las cartas y reglas del modo Arsenal (en desarrollo).
 - `net.js`: la conexión online entre dos navegadores.
 - `bot.js`: el bot para jugar en solitario (dificultad Fácil o Normal).
 - `config.js`: claves opcionales del servidor TURN (ver abajo).
 - `reglas/`: versiones anteriores del reglamento (la v1, "la captura termina el turno", se puede elegir en el menú como variante).
+- `cards/arsenal/`: ilustraciones provisionales de las cartas del modo Arsenal.
 - `cards/`: ilustraciones de las cartas especiales (provisionales; ver `cards/LEEME.md` para sustituirlas).
 - `lib/peerjs.min.js`: la librería PeerJS (licencia MIT, en `lib/peerjs-LICENSE`).
 
