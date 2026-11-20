@@ -59,7 +59,7 @@
 
   // Casillas que ataca cada bando (incluidas las ocupadas por piezas propias = defensa)
   // Devuelve, por casilla, el valor de la pieza atacante más barata (o undefined).
-  function attackMap(board, color) {
+  function attackMap(board, color, skip) {
     const map = new Array(64);
     const mark = function (r, c, v) {
       if (r < 0 || r > 7 || c < 0 || c > 7) return false;
@@ -78,7 +78,7 @@
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
         const p = board[r][c];
-        if (!p || p.color !== color) continue;
+        if (!p || p.color !== color || (skip && skip[p.id])) continue;
         const v = p.type === 'k' ? 50 : VALUES[p.type];
         switch (p.type) {
           case 'p': {
@@ -112,8 +112,13 @@
     }
     const opp = me === 'w' ? 'b' : 'w';
     const board = s.board;
-    const oppAtt = attackMap(board, opp);
+    // Modo Arsenal: las piezas rivales congeladas no amenazan y las propias con Escudo no se pueden capturar
+    const frozenOpp = {}, safe = {};
+    if (s.frozen && s.frozen.player !== botPlayer) s.frozen.ids.forEach(function (id) { frozenOpp[id] = true; });
+    if (s.shields) s.shields.forEach(function (x) { safe[x.id] = true; });
+    const oppAtt = attackMap(board, opp, frozenOpp);
     const myAtt = attackMap(board, me);
+    const kingRisk = s.game === 'arsenal' ? 1 : P_MOVE;
     let score = 0;
     let myKing = null, oppKing = null;
 
@@ -137,19 +142,19 @@
           score += sign * 0.15;
         }
         // Piezas propias amenazadas
-        if (p.color === me && oppAtt[i] !== undefined) {
+        if (p.color === me && oppAtt[i] !== undefined && !safe[p.id]) {
           if (myAtt[i] === undefined) score -= 0.8 * v;               // sin defensa
           else if (oppAtt[i] < v) score -= 0.6 * (v - oppAtt[i]);     // atacada por algo más barato
         }
         // Piezas rivales que podemos atacar (el rival mueve antes, así que vale poco)
-        if (p.color === opp && myAtt[i] !== undefined && oppAtt[i] === undefined) score += 0.1 * v;
+        if (p.color === opp && myAtt[i] !== undefined && oppAtt[i] === undefined && !safe[p.id]) score += 0.1 * v;
       }
     }
 
     // Seguridad del rey: si el rival puede capturarlo en su próximo turno, es casi perder
     if (myKing) {
       const ki = myKing[0] * 8 + myKing[1];
-      if (oppAtt[ki] !== undefined) score -= P_MOVE * 1000;
+      if (oppAtt[ki] !== undefined && !safe[board[myKing[0]][myKing[1]].id]) score -= kingRisk * 1000;
       // Casillas alrededor del rey controladas por el rival (peligro con 2 o 3 movimientos)
       for (let dr = -1; dr <= 1; dr++) {
         for (let dc = -1; dc <= 1; dc++) {

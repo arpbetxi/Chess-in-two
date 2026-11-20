@@ -15,7 +15,7 @@ Ideas anotadas en noviembre de 2026 para retomarlas más adelante, sin fecha. Es
 - Es lo más rápido: se apoya en el mazo y el selector de variantes que ya existen.
 
 ## 2. Modo Arsenal: cartas en la mano (prioridad alta)
-- **Estado:** jugable en local, contra el bot y online (`arsenal-engine.js`). Pendiente: ajustes de equilibrio tras las primeras partidas; el bot solo usa cartas potenciadoras y Ascenso.
+- **Estado:** jugable en local, contra el bot y online (`arsenal-engine.js`). Pendiente: ajustes de equilibrio tras las primeras partidas; el bot usa todas las cartas con reglas sencillas (se puede afinar).
 - En lugar de robar una carta cada turno, se roban cartas **de vez en cuando**. La mecánica exacta está por definir.
 - Las cartas se guardan **en la mano** y el jugador decide cuándo usarlas.
 - Serían cartas distintas, con efectos especiales que potencian el juego. Por ejemplo: **atravesar peones**.

@@ -753,6 +753,159 @@
     return best || { move: null, score: -Infinity };
   }
 
+  // Lo que sabe el bot: no ve las trampas del rival
+  function botView(state, P) {
+    const v = clone(state);
+    v.traps = v.traps.filter(function (t) { return t.owner === P; });
+    return v;
+  }
+
+  function materialDiff(state, P) {
+    const mine = colorOf(state, P);
+    let d = 0;
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+      const p = state.board[r][c];
+      if (p && p.type !== 'k') d += p.color === mine ? VALUES[p.type] : -VALUES[p.type];
+    }
+    return d;
+  }
+
+  // Movimientos que tendría el rival si le tocara ahora
+  function rivalMoves(state, P) {
+    const c = clone(state);
+    c.current = other(P);
+    c.phase = 'turn';
+    c.buff = null;
+    c.movesLeft = 1;
+    c.movesThisTurn = 0;
+    return legalMoves(c);
+  }
+
+  // Ruleta: elige la selección válida que deja mejor la posición
+  function ruletaChoice(state, P) {
+    const elig = ruletaEligible(state);
+    const val = function (q) { return VALUES[state.board[q[0]][q[1]].type]; };
+    const orders = [
+      elig.slice().sort(function (a, b) { return val(b) - val(a); }),
+      elig.slice().sort(function (a, b) { return val(a) - val(b); }),
+    ];
+    for (let i = 0; i < 24; i++) orders.push(shuffle(elig.slice()));
+    let best = null;
+    for (const order of orders) {
+      let left = Math.abs(state.ruleta.value);
+      const pick = [];
+      for (const q of order) { const v = val(q); if (v <= left) { pick.push(q); left -= v; } }
+      if (!ruletaCheck(state, pick).ok) continue;
+      const c = clone(state);
+      apply(c, { type: 'ruletaPick', squares: pick }, P);
+      const sc = score(c, P);
+      if (!best || sc > best.score) best = { squares: pick, score: sc };
+    }
+    return best;
+  }
+
+  // Valor esperado de girar la Ruleta (media de las 8 casillas)
+  function ruletaExpected(view, P) {
+    let total = 0;
+    for (let i = 0; i < RULETA.length; i++) {
+      const c = clone(view);
+      c.ruleta = { value: RULETA[i], idx: i, player: P };
+      if (ruletaCheck(c, []).ok) { total += score(c, P); continue; }
+      c.phase = 'ruleta';
+      const ch = ruletaChoice(c, P);
+      total += ch ? ch.score : score(c, P);
+    }
+    return total / RULETA.length;
+  }
+
+  // Candidatos con cartas de acción: { action, score } (score comparable con el de mover)
+  function actionCandidates(state, view, P, base) {
+    const out = [];
+    const cards = playableCards(state);
+    const has = function (id) { return cards.indexOf(id) >= 0; };
+    const pass = score(view, P);                 // no mover: el tablero se queda igual
+    const tryPlay = function (id, target) {
+      const c = clone(view);
+      if (!playCard(c, id, target)) return null;
+      return score(c, P);
+    };
+
+    // Posesión: la captura que más gane
+    if (has('posesion')) {
+      for (const f of possessionPieces(view)) {
+        for (const m of possessionMoves(view, f[0], f[1])) {
+          const t = { from: f, to: m.to };
+          const sc = tryPlay('posesion', t);
+          if (sc !== null) out.push({ action: { type: 'play', card: 'posesion', target: t }, score: sc });
+        }
+      }
+    }
+    // Escudo: proteger la pieza propia que esté en peligro
+    if (has('escudo')) {
+      for (const q of ownPieces(view)) {
+        const sc = tryPlay('escudo', { sq: q });
+        if (sc !== null && sc > pass + 0.5) out.push({ action: { type: 'play', card: 'escudo', target: { sq: q } }, score: sc });
+      }
+    }
+    // Congelar: la zona que más amenazas o material rival bloquea
+    if (has('congelar')) {
+      const rivalColor = colorOf(view, other(P));
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+        let frozenMaterial = 0;
+        for (let rr = r - 1; rr <= r + 1; rr++) for (let cc = c - 1; cc <= c + 1; cc++) {
+          const p = inside(rr, cc) && view.board[rr][cc];
+          if (p && p.color === rivalColor && p.type !== 'k') frozenMaterial += VALUES[p.type];
+        }
+        if (!frozenMaterial) continue;
+        const sc = tryPlay('congelar', { sq: [r, c] });
+        if (sc !== null) out.push({ action: { type: 'play', card: 'congelar', target: { sq: [r, c] } }, score: sc + 0.05 * frozenMaterial });
+      }
+    }
+    // Enroque: el intercambio de dos piezas propias que mejor quede
+    if (has('enroque')) {
+      const own = ownPieces(view);
+      for (let i = 0; i < own.length; i++) for (let j = i + 1; j < own.length; j++) {
+        const t = { a: own[i], b: own[j] };
+        const sc = tryPlay('enroque', t);
+        if (sc !== null) out.push({ action: { type: 'play', card: 'enroque', target: t }, score: sc });
+      }
+    }
+    // Trampa: en una casilla vacía a la que puedan llegar piezas rivales valiosas
+    if (has('trampa')) {
+      const reach = {};
+      for (const m of rivalMoves(view, P)) {
+        if (m.capture) continue;
+        const p = view.board[m.from[0]][m.from[1]];
+        if (p.type === 'k') continue;
+        const k = m.to[0] + ',' + m.to[1];
+        reach[k] = (reach[k] || 0) + VALUES[p.type];
+      }
+      let bestSq = null, bestW = 0;
+      Object.keys(reach).forEach(function (k) {
+        const q = k.split(',').map(Number);
+        if (state.board[q[0]][q[1]] || state.traps.some(function (t) { return t.r === q[0] && t.c === q[1]; })) return;
+        if (reach[k] > bestW) { bestW = reach[k]; bestSq = q; }
+      });
+      if (bestSq) out.push({ action: { type: 'play', card: 'trampa', target: { sq: bestSq } }, score: pass + Math.min(bestW, 9) * 0.12 });
+    }
+    // Ruleta: si va perdiendo, o si en promedio sale a cuenta
+    if (has('ruleta')) {
+      const ev = ruletaExpected(view, P);
+      const losing = materialDiff(view, P) <= -3;
+      out.push({ action: { type: 'play', card: 'ruleta' }, score: losing ? ev + 1 : ev });
+    }
+    // Apuesta: con la mano casi vacía y si mover no corre prisa
+    if (has('apuesta') && state.hands[P].length <= 2) {
+      out.push({ action: { type: 'play', card: 'apuesta' }, score: pass + (state.hands[P].length === 1 ? 0.8 : 0.3) });
+    }
+    // Robo: si el rival acumula cartas
+    if (has('robo')) {
+      const n = state.hands[other(P)].length;
+      out.push({ action: { type: 'play', card: 'robo' }, score: pass + (n >= 3 ? 0.9 : n === 2 ? 0.5 : 0.1) });
+    }
+    return out;
+  }
+
   function botAction(state, level) {
     const P = state.current;
     switch (state.phase) {
@@ -765,26 +918,19 @@
         return { type: 'discard', index: idx };
       }
       case 'ruleta': {
-        const elig = ruletaEligible(state).sort(function (a, b) {
-          return VALUES[state.board[b[0]][b[1]].type] - VALUES[state.board[a[0]][a[1]].type];
-        });
-        let left = Math.abs(state.ruleta.value);
-        const pick = [];
-        for (const s of elig) {
-          const v = VALUES[state.board[s[0]][s[1]].type];
-          if (v <= left) { pick.push(s); left -= v; }
-        }
-        return { type: 'ruletaPick', squares: pick };
+        const ch = ruletaChoice(state, P);
+        return { type: 'ruletaPick', squares: ch ? ch.squares : [] };
       }
       case 'turn': {
+        const view = botView(state, P);
         // Ascenso si hay puntos
         if (state.movesThisTurn === 0 && state.points[P] >= ASC_POINTS) {
           let best = null;
-          for (const s of ownPieces(state)) {
-            const p = state.board[s[0]][s[1]];
+          for (const s of ownPieces(view)) {
+            const p = view.board[s[0]][s[1]];
             const opts = { p: ['n', 'b'], n: ['r'], b: ['r'], r: ['q'] }[p.type] || [];
             for (const to of opts) {
-              const c = clone(state);
+              const c = clone(view);
               apply(c, { type: 'ascend', r: s[0], c: s[1], to: to }, P);
               const sc = score(c, P);
               if (!best || sc > best.score) best = { action: { type: 'ascend', r: s[0], c: s[1], to: to }, score: sc };
@@ -792,18 +938,25 @@
           }
           if (best) return best.action;
         }
-        const base = bestMove(state, P, level, 1);
-        // Potenciadoras: se usan si mejoran claramente la jugada
+        const base = bestMove(view, P, level, 1);
         if (canUseCards(state)) {
-          let bestCard = null;
+          let choice = null;
+          // Potenciadoras: se usan si mejoran claramente la jugada
           for (const id of ['doblepaso', 'fantasma', 'salto']) {
             if (state.hands[P].indexOf(id) < 0 || !cardAllowed(state, id).ok) continue;
-            const c = clone(state);
+            const c = clone(view);
             playCard(c, id, null);
             const r = bestMove(c, P, level, id === 'doblepaso' ? 2 : 1);
-            if (r.move && (!bestCard || r.score > bestCard.score)) bestCard = { id: id, score: r.score };
+            if (r.move && r.score > base.score + 1 && (!choice || r.score > choice.score)) choice = { action: { type: 'play', card: id }, score: r.score };
           }
-          if (bestCard && bestCard.score > base.score + 1) return { type: 'play', card: bestCard.id };
+          // Cartas de acción (en fácil, solo a veces)
+          if (level !== 'facil' || Math.random() < 0.5) {
+            for (const cand of actionCandidates(state, view, P, base)) {
+              const margin = base.move ? 0.4 : -Infinity;
+              if (cand.score > base.score + margin && (!choice || cand.score > choice.score)) choice = cand;
+            }
+          }
+          if (choice) return choice.action;
           if (!base.move) {
             const act = playableCards(state).find(function (id) { return id === 'apuesta' || id === 'robo'; });
             if (act) return { type: 'play', card: act };
