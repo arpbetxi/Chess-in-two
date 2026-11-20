@@ -47,7 +47,7 @@
     },
     {
       id: 'robo', name: 'Robo', rarity: 'rara', type: 'accion', copies: 4,
-      text: 'Le quitas al rival una carta al azar de su mano.',
+      text: 'Eliges una de las cartas del rival, boca abajo, y te la quedas. Él ve sobre cuál pasa tu cursor.',
     },
     {
       id: 'sed', name: 'Sed de sangre', rarity: 'rara', type: 'potenciadora', copies: 4,

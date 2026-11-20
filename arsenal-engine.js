@@ -12,6 +12,7 @@
  *   { type: 'duplicate', choice }            carta repetida: 'discard' | 'combine'
  *   { type: 'discard', index }               mano llena: descartar una carta
  *   { type: 'ruletaPick', squares }          piezas eliminadas por la Ruleta
+ *   { type: 'roboPick', index }              Robo: carta del rival elegida (boca abajo)
  */
 (function (root) {
   'use strict';
@@ -80,7 +81,7 @@
       pending: { 1: 0, 2: 0 },          // cartas por piezas perdidas, se roban al empezar el turno
       queue: [],                        // cartas por recibir este turno ('draw' o un id)
       incoming: null,                   // carta repetida pendiente de decisión
-      phase: 'turn',                    // turn | duplicate | discard | ruleta | over
+      phase: 'turn',                    // turn | duplicate | discard | ruleta | robo | over
       cardUsed: false,
       buff: null,                       // potenciadora activa: salto | fantasma | doblepaso
       movesLeft: 1,
@@ -574,15 +575,11 @@
         log(state, '🎲 ' + name(state, P) + ' roba 2 cartas y pierde su movimiento.');
         processQueue(state);
         return true;
-      case 'robo': {
-        const rh = state.hands[other(P)];
-        const stolen = rh.splice(Math.floor(Math.random() * rh.length), 1)[0];
-        log(state, '🦝 ' + name(state, P) + ' le roba una carta a ' + name(state, other(P)) + '.');
-        state.queue.push(stolen);
-        state.endAfter = true;
-        processQueue(state);
+      case 'robo':
+        // El jugador elige una de las cartas del rival, boca abajo
+        state.robo = { player: P };
+        state.phase = 'robo';
         return true;
-      }
       case 'ruleta': {
         const idx = Math.floor(Math.random() * RULETA.length);
         state.ruleta = { value: RULETA[idx], idx: idx, player: P };
@@ -701,6 +698,22 @@
         const card = hand.splice(action.index, 1)[0];
         state.phase = 'turn';
         discardToPile(state, card, ' (mano llena)');
+        processQueue(state);
+        return true;
+      }
+
+      case 'roboPick': {
+        if (state.phase !== 'robo') return false;
+        const rh = state.hands[other(P)];
+        if (!(action.index >= 0 && action.index < rh.length)) return false;
+        const stolen = rh.splice(action.index, 1)[0];
+        state.roboCount = (state.roboCount || 0) + 1;
+        state.lastRobo = { player: P, card: stolen, index: action.index, n: state.roboCount };
+        state.robo = null;
+        state.phase = 'turn';
+        log(state, '🦝 ' + name(state, P) + ' le roba una carta a ' + name(state, other(P)) + '.');
+        state.queue.push(stolen);
+        state.endAfter = true;
         processQueue(state);
         return true;
       }
@@ -917,6 +930,8 @@
         hand.forEach(function (id, i) { if (points(id) < points(hand[idx])) idx = i; });
         return { type: 'discard', index: idx };
       }
+      case 'robo':
+        return { type: 'roboPick', index: Math.floor(Math.random() * state.hands[other(P)].length) };
       case 'ruleta': {
         const ch = ruletaChoice(state, P);
         return { type: 'ruletaPick', squares: ch ? ch.squares : [] };

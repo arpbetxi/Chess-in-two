@@ -220,6 +220,7 @@
     $('destinoArea').classList.toggle('hidden', isArsenal());
     $('arsenalPanel').classList.toggle('hidden', !isArsenal());
     if (isArsenal()) renderArsenalPanel(active);
+    renderRobo();
 
     // Mazo y carta
     $('deckCount').textContent = state.deck.length;
@@ -452,6 +453,7 @@
       if (mode !== 'bot' || state.phase === 'over' || state.current !== BOT_PLAYER) return;
       if (Date.now() < revealUntil) { scheduleBot(); return; }
       const action = isArsenal() ? ArsenalEngine.botAction(state, botLevel) : Bot.nextAction(state, botLevel);
+      if (action && action.type === 'roboPick') { botRoboHover(action); return; }
       if (action && applyAction(action, BOT_PLAYER)) afterAction();
     }, wait);
   }
@@ -459,6 +461,27 @@
   function stopBot() {
     clearTimeout(botTimer);
     botTimer = null;
+  }
+
+  // Robo del bot: mueve el "cursor" por tus cartas antes de elegir
+  function botRoboHover(action) {
+    const n = state.hands[BOT_PLAYER === 1 ? 2 : 1].length;
+    const steps = [];
+    for (let i = 0; i < 3 + Math.floor(Math.random() * 3); i++) steps.push(Math.floor(Math.random() * n));
+    steps.push(action.index);
+    let k = 0;
+    const next = function () {
+      if (mode !== 'bot' || state.phase !== 'robo' || state.current !== BOT_PLAYER) { botTimer = null; return; }
+      if (k < steps.length) {
+        roboHover = steps[k++];
+        updateRoboHover();
+        botTimer = setTimeout(next, 380 + Math.random() * 420);
+        return;
+      }
+      botTimer = null;
+      if (applyAction(action, BOT_PLAYER)) afterAction();
+    };
+    botTimer = setTimeout(next, 300);
   }
 
   // ---------- Acciones ----------
@@ -626,6 +649,11 @@
     },
     onData: function (msg) {
       if (!msg || typeof msg !== 'object') return;
+      if (msg.t === 'hover') {
+        roboHover = typeof msg.i === 'number' ? msg.i : null;
+        updateRoboHover();
+        return;
+      }
       if (mode === 'host' && msg.t === 'hello') {
         let guestName = cleanName(msg.name, 'Rival');
         if (guestName === Engine.playerName(state, 1)) guestName += ' 2'; // evita dos jugadores con el mismo nombre
@@ -666,6 +694,10 @@
   let aMsg = '';           // aviso puntual
   let lastPlayCount = null;
   let lastRuletaCount = null;
+  let lastRoboCount = null;
+  let roboHover = null;    // carta del rival sobre la que está el cursor del que roba
+  let roboKey = '';        // para no reconstruir las cartas en cada render
+  let roboTouch = false;   // en pantallas táctiles: primer toque señala, segundo elige
 
   function resetArsenalUi() {
     aPick = null;
@@ -742,6 +774,7 @@
 
   function arsenalInstructions() {
     const P = state.current;
+    if (state.phase === 'robo') return 'Robo: elige una de las cartas del rival.';
     if (state.phase === 'duplicate') return 'Has robado una carta repetida: decide en el panel qué hacer con ella.';
     if (state.phase === 'discard') return 'Tienes la mano llena: pulsa en el panel la carta que quieres descartar.';
     if (state.phase === 'ruleta') return 'Ruleta: elige en el tablero las piezas que se eliminan y confirma en el panel.';
@@ -798,11 +831,13 @@
     const myDecision = active && state.current === P;
 
     // Animaciones: carta usada o ruleta
-    const pc = state.playCount || 0, rc = state.ruletaCount || 0;
+    const pc = state.playCount || 0, rc = state.ruletaCount || 0, bc = state.roboCount || 0;
     if (lastRuletaCount !== null && rc > lastRuletaCount && state.lastRuleta) showWheel(state.lastRuleta);
+    else if (lastRoboCount !== null && bc > lastRoboCount && state.lastRobo) showStolen(state.lastRobo);
     else if (lastPlayCount !== null && pc > lastPlayCount && state.lastPlayed) showArsenalPlay(state.lastPlayed);
     lastPlayCount = pc;
     lastRuletaCount = rc;
+    lastRoboCount = bc;
 
     // Rival
     $('aRival').innerHTML = '';
@@ -1025,6 +1060,86 @@
 
   function showArsenalPlay(lp) {
     showRevealEl(arsenalCardEl(lp.card), playVerb(lp.player), A.CARD[lp.card].text);
+  }
+
+  function showStolen(lr) {
+    const victim = lr.player === 1 ? 2 : 1;
+    let who;
+    if (mode === 'local' || !mode) who = Engine.playerName(state, lr.player) + ' roba';
+    else if (lr.player === myPlayer) who = 'Has robado';
+    else who = (mode === 'bot' ? 'El bot' : 'Tu rival') + ' te roba';
+    if (victim === myPlayer || lr.player === myPlayer || mode === 'local') {
+      showRevealEl(arsenalCardEl(lr.card), '🦝 ' + who, A.CARD[lr.card].text);
+    }
+  }
+
+  // ¿Quién está mirando el Robo desde este dispositivo?
+  function roboThiefHere() {
+    if (mode === 'local' || !mode) return true;
+    return state.robo && state.robo.player === myPlayer;
+  }
+
+  function setRoboHover(i) {
+    if (roboHover === i) return;
+    roboHover = i;
+    updateRoboHover();
+    if (online()) Net.send({ t: 'hover', i: i });
+  }
+
+  function updateRoboHover() {
+    const cards = $('roboCards').children;
+    for (let i = 0; i < cards.length; i++) cards[i].classList.toggle('hovered', roboHover === i);
+  }
+
+  function renderRobo() {
+    const box = $('roboOverlay');
+    if (!isArsenal() || state.phase !== 'robo' || !state.robo) {
+      box.classList.add('hidden');
+      roboHover = null;
+      roboKey = '';
+      return;
+    }
+    const thief = state.robo.player, victim = thief === 1 ? 2 : 1;
+    const hand = state.hands[victim];
+    const thiefHere = roboThiefHere();
+    const canPick = thiefHere && canAct();
+    const key = (state.roboCount || 0) + '|' + hand.join(',') + '|' + thiefHere + '|' + canPick;
+    box.classList.remove('hidden');
+    if (key === roboKey) { updateRoboHover(); return; }
+    roboKey = key;
+    const thiefName = mode === 'bot' && thief !== myPlayer ? 'El bot' : Engine.playerName(state, thief);
+    $('roboTitle').textContent = thiefHere
+      ? '🦝 Elige una carta de ' + Engine.playerName(state, victim)
+      : '🦝 ' + thiefName + ' está eligiendo una de tus cartas…';
+    $('roboHint').textContent = thiefHere ? 'Te quedas con la que elijas.' : 'Ves en directo sobre cuál pasa el cursor.';
+    const row = $('roboCards');
+    row.innerHTML = '';
+    hand.forEach(function (id, i) {
+      let el;
+      if (thiefHere) {
+        el = document.createElement('div');
+        el.className = 'acard robo-back';
+      } else {
+        el = arsenalCardEl(id);
+      }
+      el.classList.add('robo-card');
+      const cur = document.createElement('div');
+      cur.className = 'robo-cursor';
+      cur.textContent = '👇';
+      el.appendChild(cur);
+      if (canPick) {
+        el.addEventListener('pointerdown', function (e) { roboTouch = e.pointerType !== 'mouse'; });
+        el.addEventListener('mouseenter', function () { if (!roboTouch) setRoboHover(i); });
+        el.addEventListener('mouseleave', function () { if (!roboTouch) setRoboHover(null); });
+        el.addEventListener('click', function () {
+          if (roboTouch && roboHover !== i) { setRoboHover(i); return; }
+          dispatch({ type: 'roboPick', index: i });
+        });
+      }
+      row.appendChild(el);
+    });
+    if (canPick && window.matchMedia && !window.matchMedia('(hover: hover)').matches) $('roboHint').textContent = 'Toca una carta para señalarla y vuelve a tocarla para robarla.';
+    updateRoboHover();
   }
 
   function showWheel(info) {
@@ -1347,6 +1462,7 @@
     openManual: openManual,
     setGameMode: function (m) { gameMode = m; },
     render: render,
+    refresh: afterAction,
   };
 
   render();
