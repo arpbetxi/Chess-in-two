@@ -55,7 +55,7 @@
     },
     {
       id: 'doblepaso', name: 'Doble paso', rarity: 'epica', type: 'potenciadora', copies: 4,
-      text: 'Haces dos movimientos este turno; el segundo no puede ser una captura.',
+      text: 'Haces dos movimientos este turno. El segundo también puede capturar, pero nunca al rey.',
     },
   ];
 
