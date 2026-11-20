@@ -90,6 +90,7 @@
       endAfter: false,
       shields: [],                      // { id, owner }: piezas protegidas durante el turno rival
       frozen: null,                     // { ids, player, squares }: piezas congeladas en el turno de `player`
+      possessed: null,                  // { id, player }: pieza rival que `player` controla este turno (Posesión)
       traps: [],                        // { r, c, owner }: ocultas para todos
       bloodlust: null,                  // jugador obligado a capturar en su turno
       ruleta: null,                     // { value, idx, player }
@@ -123,6 +124,50 @@
   }
   function isShielded(state, piece) {
     return state.shields.some(function (s) { return s.id === piece.id; });
+  }
+
+  // Posesión: la pieza rival poseída se mueve como si fuera tuya durante este turno.
+  // Puede capturar piezas de su propio bando (nunca al rey ni a piezas con Escudo) y no a las tuyas.
+  // Los peones conservan su sentido de avance. Sin enroque ni captura al paso.
+  function possessedPos(state) {
+    const ps = state.possessed;
+    if (!ps || ps.player !== state.current) return null;
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+      const p = state.board[r][c];
+      if (p && p.id === ps.id) return [r, c];
+    }
+    return null;
+  }
+  function possessedMoves(state, r, c) {
+    const b = state.board;
+    const p = b[r][c];
+    const real = p.color;
+    const ok = function (t) { return t && t.color === real && t.type !== 'k' && !isShielded(state, t); };
+    const out = [];
+    if (p.type === 'p') {
+      const dir = real === 'w' ? -1 : 1;
+      const start = real === 'w' ? 6 : 1;
+      if (inside(r + dir, c) && !b[r + dir][c]) {
+        out.push({ from: [r, c], to: [r + dir, c] });
+        if (r === start && !b[r + 2 * dir][c]) out.push({ from: [r, c], to: [r + 2 * dir, c] });
+      }
+      for (const dc of [-1, 1]) {
+        const tr = r + dir, tc = c + dc;
+        if (inside(tr, tc) && ok(b[tr][tc])) out.push({ from: [r, c], to: [tr, tc], capture: true });
+      }
+    } else {
+      p.color = colorOf(state, state.current);
+      const ms = Engine.pieceMoves(state, r, c);
+      p.color = real;
+      ms.forEach(function (m) {
+        if (m.ep || m.castle !== undefined) return;
+        const t = b[m.to[0]][m.to[1]];
+        if (!t) out.push({ from: m.from, to: m.to });
+        else if (ok(t)) out.push({ from: m.from, to: m.to, capture: true });
+      });
+    }
+    out.forEach(function (m) { m.possessed = true; });
+    return out;
   }
 
   // Movimientos de una pieza con las potenciadoras activas
@@ -203,6 +248,8 @@
         }
       }
     }
+    const pp = possessedPos(state);
+    if (pp) list = list.concat(possessedMoves(state, pp[0], pp[1]));
     if (state.bloodlust === P) {
       const caps = list.filter(function (m) { return m.capture; });
       if (caps.length) list = caps;                       // Sed de sangre: obligado a capturar
@@ -216,6 +263,7 @@
 
   function needsPromotion(state, m) {
     const p = state.board[m.from[0]][m.from[1]];
+    if (p && p.color !== colorOf(state, state.current)) return false; // peón poseído: corona a dama
     return !!p && p.type === 'p' && m.to[0] === (p.color === 'w' ? 0 : 7);
   }
 
@@ -281,7 +329,9 @@
       text = valid.castle === 7 ? 'enroque corto' : 'enroque largo';
     }
     if (state.ep && state.ep.player !== state.current) state.ep = null;
-    if (valid.double) state.ep = { player: state.current, pawnId: p.id, pawnPos: [tr, tc], target: [(fr + tr) / 2, fc] };
+    if (valid.possessed) text = PIECE_NAMES[p.type] + ' poseído ' + sq(fr, fc) + '→' + sq(tr, tc);
+    if (valid.possessed) promo = 'q';
+    if (valid.double && !valid.possessed) state.ep = { player: state.current, pawnId: p.id, pawnPos: [tr, tc], target: [(fr + tr) / 2, fc] };
     if (p.type === 'p' && tr === (p.color === 'w' ? 0 : 7)) {
       p.type = ['q', 'r', 'b', 'n'].indexOf(promo) >= 0 ? promo : 'q';
       text += ' (corona: ' + PIECE_NAMES[p.type] + ')';
@@ -324,6 +374,7 @@
     const P = state.current;
     if (state.bloodlust === P) state.bloodlust = null;
     if (state.frozen && state.frozen.player === P) state.frozen = null;
+    if (state.possessed && state.possessed.player === P) state.possessed = null;
     state.shields = state.shields.filter(function (s) { return s.owner === P; });
     if (state.ep && state.ep.player !== P) state.ep = null;
     state.buff = null;
@@ -377,8 +428,9 @@
   function checkStuck(state) {
     if (state.phase !== 'turn') return;
     if (legalMoves(state).length) return;
-    if (state.movesThisTurn > 0 || state.cardUsed) { endTurn(state); return; } // ya ha hecho algo este turno
-    const canAct = playableCards(state).some(function (id) { return CARD[id].type === 'accion'; });
+    if (state.movesThisTurn > 0) { endTurn(state); return; } // Doble paso: ya ha movido una vez
+    // Antes de usar carta, una carta de acción podría darle movimientos (Posesión, Enroque...)
+    const canAct = playableCards(state).some(function (id) { return CARD[id].type === 'accion' && id !== 'apuesta'; });
     if (!canAct) finish(state, { type: 'draw', reason: 'Ahogado: ' + name(state, state.current) + ' no puede mover' });
   }
 
@@ -422,7 +474,7 @@
       return { ok: false, why: 'Sed de sangre: este turno estás obligado a capturar.' };
     }
     if (id === 'robo' && !state.hands[other(P)].length) return { ok: false, why: 'Tu rival no tiene cartas.' };
-    if (id === 'posesion' && !possessionPieces(state).length) return { ok: false, why: 'Ninguna pieza rival puede capturar a las de su bando.' };
+    if (id === 'posesion' && !possessionPieces(state).length) return { ok: false, why: 'No hay ninguna pieza rival que se pueda poseer.' };
     if (id === 'enroque' && ownPieces(state).length < 2) return { ok: false, why: 'Necesitas dos piezas.' };
     return { ok: true };
   }
@@ -437,24 +489,14 @@
     return out;
   }
 
-  // Posesión: capturas de una pieza rival contra su propio bando
-  function possessionMoves(state, r, c) {
-    const p = state.board[r][c];
-    const mine = colorOf(state, state.current);
-    if (!p || p.color === mine || p.type === 'k') return [];
-    const real = p.color;
-    p.color = mine; // se mueve "como si fuera tuya"
-    const ms = Engine.pieceMoves(state, r, c);
-    p.color = real;
-    return ms.filter(function (m) {
-      if (!m.capture || m.ep || m.castle !== undefined) return false;
-      const t = state.board[m.to[0]][m.to[1]];
-      return t && t.color === real && t.type !== 'k' && !isShielded(state, t);
-    });
-  }
+  // Posesión: piezas rivales que se pueden poseer (ni el rey ni las que tienen Escudo)
   function possessionPieces(state) {
+    const mine = colorOf(state, state.current);
     const out = [];
-    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) if (possessionMoves(state, r, c).length) out.push([r, c]);
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+      const p = state.board[r][c];
+      if (p && p.color !== mine && p.type !== 'k' && !isShielded(state, p)) out.push([r, c]);
+    }
     return out;
   }
 
@@ -507,7 +549,9 @@
       case 'escudo':
       case 'trampa':
       case 'congelar':
+      case 'posesion':
         if (!t.sq || !inside(t.sq[0], t.sq[1])) return false;
+        if (id === 'posesion' && !possessionPieces(state).some(function (q) { return q[0] === t.sq[0] && q[1] === t.sq[1]; })) return false;
         if (id === 'escudo' && !(b[t.sq[0]][t.sq[1]] && b[t.sq[0]][t.sq[1]].color === mine)) return false;
         if (id === 'trampa' && (b[t.sq[0]][t.sq[1]] || state.traps.some(function (x) { return x.r === t.sq[0] && x.c === t.sq[1]; }))) return false;
         break;
@@ -516,12 +560,6 @@
         const pa = b[t.a[0]] && b[t.a[0]][t.a[1]], pb = b[t.b[0]] && b[t.b[0]][t.b[1]];
         if (!pa || !pb || pa.color !== mine || pb.color !== mine) return false;
         if ((pa.type === 'p' && (t.b[0] === 0 || t.b[0] === 7)) || (pb.type === 'p' && (t.a[0] === 0 || t.a[0] === 7))) return false;
-        break;
-      }
-      case 'posesion': {
-        if (!t.from || !t.to) return false;
-        const ok = possessionMoves(state, t.from[0], t.from[1]).some(function (m) { return m.to[0] === t.to[0] && m.to[1] === t.to[1]; });
-        if (!ok) return false;
         break;
       }
     }
@@ -619,16 +657,10 @@
         return true;
       }
       case 'posesion': {
-        const p = b[t.from[0]][t.from[1]];
-        const captured = removePiece(state, t.to[0], t.to[1]);
-        b[t.to[0]][t.to[1]] = p;
-        b[t.from[0]][t.from[1]] = null;
-        p.moved = true;
-        state.lastMove = { from: t.from, to: t.to };
-        log(state, '😈 Posesión: el ' + PIECE_NAMES[p.type] + ' rival de ' + sq(t.from[0], t.from[1]) + ' captura a su propio ' + PIECE_NAMES[captured.type] + ' en ' + sq(t.to[0], t.to[1]) + '.');
-        lossDraw(state, captured);
-        checkTrap(state, t.to[0], t.to[1]);
-        checkStuck(state);              // después de la carta, el jugador mueve
+        const p = b[t.sq[0]][t.sq[1]];
+        state.possessed = { id: p.id, player: P };
+        log(state, '😈 Posesión: ' + name(state, P) + ' controla este turno el ' + PIECE_NAMES[p.type] + ' rival de ' + sq(t.sq[0], t.sq[1]) + '.');
+        checkStuck(state);
         return true;
       }
     }
@@ -865,11 +897,14 @@
       });
     };
 
-    // Posesión: la captura que más gane
+    // Posesión: la pieza rival con la que mejor jugada se puede hacer
     if (has('posesion')) {
-      const ts = [];
-      for (const f of possessionPieces(view)) for (const m of possessionMoves(view, f[0], f[1])) ts.push({ from: f, to: m.to });
-      best('posesion', ts);
+      possessionPieces(view).forEach(function (q) {
+        const c = clone(view);
+        if (!playCard(c, 'posesion', { sq: q })) return;
+        const r = bestMove(c, P, level, 1);
+        if (r.move && r.move.possessed) out.push({ action: { type: 'play', card: 'posesion', target: { sq: q } }, score: r.score });
+      });
     }
     // Escudo: proteger la pieza propia que esté en peligro
     if (has('escudo')) best('escudo', ownPieces(view).map(function (q) { return { sq: q }; }));
@@ -1017,7 +1052,7 @@
     cardAllowed: cardAllowed,
     playableCards: playableCards,
     ownPieces: ownPieces,
-    possessionMoves: possessionMoves,
+    possessedPos: possessedPos,
     possessionPieces: possessionPieces,
     ruletaEligible: ruletaEligible,
     ruletaCheck: ruletaCheck,

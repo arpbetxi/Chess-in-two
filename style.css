@@ -801,3 +801,5 @@ button.cap-piece.chosen { border-color: #2f9e62; background: #2c5040; }
   .robo-card { width: 96px; height: 134px; }
   .robo-card img { width: 64px; height: 64px; }
 }
+.sq.a-possessed { box-shadow: inset 0 0 0 4px #b05cff, inset 0 0 18px rgba(176, 92, 255, 0.85); }
+.sq.a-possessed .piece { filter: drop-shadow(0 0 6px #b05cff); }

@@ -685,7 +685,7 @@
 
   // ---------- Modo Arsenal ----------
   const A = window.ArsenalEngine;
-  const NEEDS = { escudo: 1, trampa: 1, congelar: 1, enroque: 2, posesion: 2 };
+  const NEEDS = { escudo: 1, trampa: 1, congelar: 1, enroque: 2, posesion: 1 };
   const ASC_NEXT = { p: ['n', 'b'], n: ['r'], b: ['r'], r: ['q'] };
   let aPick = null;        // carta de la mano seleccionada: { id, index } (index -1 = Escudo)
   let aTarget = null;      // eligiendo objetivo en el tablero: { card, picks }
@@ -755,8 +755,7 @@
         });
         break;
       case 'posesion':
-        if (!picks.length) A.possessionPieces(state).forEach(add);
-        else A.possessionMoves(state, picks[0][0], picks[0][1]).forEach(function (m) { add(m.to); });
+        A.possessionPieces(state).forEach(add);
         break;
     }
     return out;
@@ -767,6 +766,8 @@
     if (state.frozen && state.frozen.squares.some(function (s) { return s[0] === r && s[1] === c; })) sq.classList.add('a-frozen-zone');
     if (p && state.frozen && state.frozen.ids.indexOf(p.id) >= 0) sq.classList.add('a-frozen');
     if (p && A.isShielded(state, p)) sq.classList.add('a-shielded');
+    const pp = A.possessedPos(state);
+    if (pp && pp[0] === r && pp[1] === c) sq.classList.add('a-possessed');
     if (cand && cand[key(r, c)]) sq.classList.add('a-targetable');
     if (aTarget && aTarget.picks.some(function (s) { return s[0] === r && s[1] === c; })) sq.classList.add('a-picked');
     if (aRuleta.some(function (s) { return s[0] === r && s[1] === c; })) sq.classList.add('a-ruleta-pick');
@@ -786,12 +787,13 @@
         case 'trampa': return 'Elige una casilla vacía para la trampa. Después nadie sabrá dónde está, ni siquiera tú.';
         case 'congelar': return 'Elige el centro de la zona de 3×3 que quieres congelar.';
         case 'enroque': return n ? 'Elige la segunda pieza del intercambio.' : 'Elige la primera pieza del intercambio.';
-        case 'posesion': return n ? 'Elige la pieza de su propio bando que va a capturar.' : 'Elige la pieza rival que vas a poseer.';
+        case 'posesion': return 'Elige la pieza rival que vas a poseer este turno.';
       }
     }
     let t;
     if (state.movesLeft > 1) t = 'Doble paso: te quedan 2 movimientos.';
     else if (state.movesThisTurn > 0) t = 'Haz tu segundo movimiento.';
+    else if (A.possessedPos(state)) t = 'Posesión: mueve la pieza poseída (marcada en morado) o cualquiera de las tuyas.';
     else if (state.cardUsed) t = 'Carta usada. Ahora haz tu movimiento.';
     else t = 'Mueve una pieza' + (A.canUseCards(state) ? ', o usa antes una carta de tu mano.' : '.');
     if (state.turnCount[P] <= 1) t += ' En tu primer turno no se pueden usar cartas.';
@@ -853,6 +855,7 @@
     const fx = [];
     if (state.frozen && state.frozen.ids.length) fx.push('❄️ ' + state.frozen.ids.length + (state.frozen.ids.length === 1 ? ' pieza congelada' : ' piezas congeladas') + ' en el turno de ' + Engine.playerName(state, state.frozen.player) + '.');
     if (state.shields.length) fx.push('🛡️ Hay ' + (state.shields.length === 1 ? 'una pieza protegida' : state.shields.length + ' piezas protegidas') + ' por un Escudo (marco dorado).');
+    if (A.possessedPos(state)) fx.push('😈 Posesión: ' + Engine.playerName(state, state.current) + ' controla este turno la pieza marcada en morado.');
     if (state.bloodlust) fx.push('🩸 Sed de sangre: ' + Engine.playerName(state, state.bloodlust) + ' está obligado a capturar en su turno.');
     if (state.traps.length) fx.push('🪤 Trampas ocultas en el tablero: ' + state.traps.length + '.');
     if (state.buff) fx.push('✨ Potenciadora activa: ' + A.CARD[state.buff].name + '.');
@@ -1025,7 +1028,6 @@
         const pk = aTarget.picks;
         let target;
         if (id === 'enroque') target = { a: pk[0], b: pk[1] };
-        else if (id === 'posesion') target = { from: pk[0], to: pk[1] };
         else target = { sq: pk[0] };
         dispatch({ type: 'play', card: id, target: target });
       } else {
@@ -1043,7 +1045,9 @@
       return;
     }
     const p = b[r][c];
-    if (p && p.color === Engine.myColor(state) && !(selected && selected[0] === r && selected[1] === c)) {
+    const pp = A.possessedPos(state);
+    const possessedHere = pp && pp[0] === r && pp[1] === c;
+    if (p && (p.color === Engine.myColor(state) || possessedHere) && !(selected && selected[0] === r && selected[1] === c)) {
       selected = [r, c];
       selMoves = A.legalMovesFrom(state, r, c);
       aPick = null;

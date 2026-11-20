@@ -63,7 +63,7 @@
     },
     {
       id: 'posesion', name: 'Posesión demoníaca', rarity: 'epica', type: 'accion', copies: 1,
-      text: 'Mueves una pieza rival (no el rey) como si fuera tuya, y ese movimiento tiene que capturar una pieza de su propio bando (nunca al rey). La pieza sigue siendo del rival.',
+      text: 'Eliges una pieza rival (no el rey) y durante este turno la controlas tú: en tu movimiento puedes moverla como si fuera tuya, incluso capturando piezas de su propio bando (nunca al rey). Sigue siendo del rival.',
     },
   ];
 
