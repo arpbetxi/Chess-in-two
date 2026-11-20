@@ -14,7 +14,7 @@
     epica: { name: 'Épica', points: 3 },
   };
 
-  // type: 'potenciadora' (se juega antes de mover y cambia tu movimiento)
+  // type: 'potenciadora' (se juega antes de mover y no te quita el movimiento)
   //       'accion'       (sustituye a tu movimiento)
   const CARDS = [
     {
@@ -46,16 +46,24 @@
       text: 'Este turno, tus piezas pueden atravesar peones de cualquier color (pero no terminar encima de uno salvo para capturarlo).',
     },
     {
-      id: 'congelar', name: 'Congelar', rarity: 'rara', type: 'accion', copies: 4,
-      text: 'Eliges una zona de 3×3: ninguna pieza de esa zona puede moverse durante el próximo turno. El rey es inmune.',
-    },
-    {
       id: 'robo', name: 'Robo', rarity: 'rara', type: 'accion', copies: 4,
       text: 'Le quitas al rival una carta al azar de su mano.',
     },
     {
-      id: 'doblepaso', name: 'Doble paso', rarity: 'epica', type: 'potenciadora', copies: 4,
+      id: 'sed', name: 'Sed de sangre', rarity: 'rara', type: 'potenciadora', copies: 4,
+      text: 'Durante el próximo turno del rival, si alguna de sus piezas puede capturar, está obligado a capturar (elige con cuál). Tampoco puede usar una carta de acción para evitarlo.',
+    },
+    {
+      id: 'congelar', name: 'Congelar', rarity: 'epica', type: 'accion', copies: 1,
+      text: 'Eliges una zona de 3×3: ninguna pieza de esa zona puede moverse durante el próximo turno. El rey es inmune.',
+    },
+    {
+      id: 'doblepaso', name: 'Doble paso', rarity: 'epica', type: 'potenciadora', copies: 2,
       text: 'Haces dos movimientos este turno. El segundo también puede capturar, pero nunca al rey.',
+    },
+    {
+      id: 'posesion', name: 'Posesión demoníaca', rarity: 'epica', type: 'accion', copies: 1,
+      text: 'Mueves una pieza rival (no el rey) como si fuera tuya, y ese movimiento tiene que capturar una pieza de su propio bando (nunca al rey). La pieza sigue siendo del rival.',
     },
   ];
 
