@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#1e2126">
   <!-- ?v=... obliga al navegador a descargar la versión nueva tras cada cambio -->
-  <link rel="stylesheet" href="style.css?v=20261120e">
+  <link rel="stylesheet" href="style.css?v=20261120g">
 </head>
 <body>
   <header>
@@ -32,7 +32,26 @@
       <div id="turn" class="turn"></div>
       <div id="variantTag" class="variant-tag hidden"></div>
 
-      <div class="card-area">
+      <!-- Panel del modo Arsenal -->
+      <div id="arsenalPanel" class="arsenal-panel hidden">
+        <div id="aRival" class="a-rival"></div>
+        <div id="aEffects" class="a-effects"></div>
+        <div class="a-hand-head">
+          <h3 id="aHandTitle">Tu mano</h3>
+          <span id="aHandCount" class="hint"></span>
+        </div>
+        <div id="aHand" class="a-hand"></div>
+        <div id="aSelected" class="a-selected hidden"></div>
+        <div id="aDecision" class="a-decision hidden"></div>
+        <div class="a-points">
+          <img src="cards/arsenal/ascenso.svg" alt="" width="34" height="34">
+          <div class="a-bar"><div id="aPtsFill" class="a-bar-fill"></div></div>
+          <span id="aPts" class="a-pts">0/5</span>
+          <button id="aAscend" class="a-ascend" disabled>Ascender</button>
+        </div>
+      </div>
+
+      <div id="destinoArea" class="card-area">
         <div class="deck">
           <div class="deck-back"><span id="deckCount">60</span></div>
           <button id="drawBtn">Robar carta</button>
@@ -92,7 +111,7 @@
           </div>
         </section>
         <section class="mode-card mode-arsenal">
-          <span class="mode-badge">En desarrollo</span>
+          <span class="mode-badge">Nuevo</span>
           <div class="mode-art" aria-hidden="true">
             <div class="mini-card a-rara"><img src="cards/arsenal/fantasma.svg" alt=""></div>
             <div class="mini-card a-epica big"><img src="cards/arsenal/doblepaso.svg" alt=""></div>
@@ -102,7 +121,7 @@
           <p>Ajedrez de un movimiento por turno, pero vas guardando cartas en la mano y eliges el mejor momento para usarlas.</p>
           <ul class="mode-tags"><li>Mano de cartas</li><li>Estratégico</li><li>Ascensos</li></ul>
           <div class="mode-actions">
-            <button id="playArsenal" disabled title="Este modo todavía se está programando">Próximamente</button>
+            <button id="playArsenal">Jugar</button>
             <button id="rulesArsenal" class="secondary">Ver reglas</button>
           </div>
         </section>
@@ -117,7 +136,7 @@
         <h2 id="arsenalTitle">Reglas de Arsenal</h2>
         <button id="arsenalClose" class="close-btn" aria-label="Cerrar">✕</button>
       </div>
-      <p class="hint variant-note">Este modo todavía se está programando: estas son sus reglas previstas.</p>
+      <p class="hint variant-note">Modo nuevo: si algo no funciona como esperas, cuéntalo en el buzón de sugerencias.</p>
 
       <section>
         <h3>Objetivo</h3>
@@ -172,12 +191,12 @@
   <div id="lobby" class="modal">
     <div class="modal-box lobby-box">
       <button id="backToModes" class="link-btn back-modes">← Cambiar de modo</button>
-      <p>In 2 Chess · Destino</p>
+      <p id="lobbyTitle">In 2 Chess · Destino</p>
       <div class="rules-row">
         <label for="playerName">Tu nombre (para el marcador)</label>
         <input id="playerName" maxlength="20" placeholder="Tu nombre" autocomplete="nickname">
       </div>
-      <div class="rules-row">
+      <div id="rulesRow" class="rules-row">
         <label for="rulesSelect">Fin del turno</label>
         <select id="rulesSelect">
           <option value="actual">Al amenazar al rey</option>
@@ -322,12 +341,13 @@
       document.write('<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"><\/script>');
     }
   </script>
-  <script src="config.js?v=20261120e"></script>
-  <script src="engine.js?v=20261120e"></script>
-  <script src="net.js?v=20261120e"></script>
-  <script src="bot.js?v=20261120e"></script>
-  <script src="ui.js?v=20261120e"></script>
-  <script src="arsenal.js?v=20261120e"></script>
-  <script src="modes.js?v=20261120e"></script>
+  <script src="config.js?v=20261120g"></script>
+  <script src="engine.js?v=20261120g"></script>
+  <script src="net.js?v=20261120g"></script>
+  <script src="bot.js?v=20261120g"></script>
+  <script src="arsenal.js?v=20261120g"></script>
+  <script src="arsenal-engine.js?v=20261120g"></script>
+  <script src="ui.js?v=20261120g"></script>
+  <script src="modes.js?v=20261120g"></script>
 </body>
 </html>

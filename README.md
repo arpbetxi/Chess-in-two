@@ -11,7 +11,8 @@ Variante de ajedrez en la que cada turno se roba una carta que decide cuántos m
 - `engine.js`: todas las reglas. `DECK_SPEC`, al principio del archivo, define la composición del mazo.
 - `ui.js`: el tablero, los clics y el menú.
 - `modes.js`: la pantalla inicial para elegir el modo (Destino o Arsenal) y el reglamento de Arsenal.
-- `arsenal.js`: las cartas y reglas del modo Arsenal (en desarrollo).
+- `arsenal.js`: las cartas y reglas del modo Arsenal.
+- `arsenal-engine.js`: el motor del modo Arsenal (manos, efectos de las cartas, ruleta, Ascenso y bot).
 - `net.js`: la conexión online entre dos navegadores.
 - `bot.js`: el bot para jugar en solitario (dificultad Fácil o Normal).
 - `config.js`: claves opcionales del servidor TURN (ver abajo).

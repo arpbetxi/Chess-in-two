@@ -5,7 +5,7 @@ Ideas anotadas en noviembre de 2026 para retomarlas más adelante, sin fecha. Es
 | Prioridad | Idea | Esfuerzo | Depende de |
 | --- | --- | --- | --- |
 | 1 · Alta | Separar el modo actual en Clásica y Caótica | Bajo | — |
-| 2 · Alta | Modo Arsenal (cartas en la mano): reglas definidas, falta programarlo | Medio | — |
+| 2 · Alta | Modo Arsenal (cartas en la mano): jugable (local, bot y online); pendiente de ajustes tras probarlo | Medio | — |
 | 3 · Media | Web con varios juegos | Medio | — |
 | 4 · Baja | Casino social con ranking | Alto | 3 |
 
@@ -15,7 +15,7 @@ Ideas anotadas en noviembre de 2026 para retomarlas más adelante, sin fecha. Es
 - Es lo más rápido: se apoya en el mazo y el selector de variantes que ya existen.
 
 ## 2. Modo Arsenal: cartas en la mano (prioridad alta)
-- **Estado:** reglas, cartas, rarezas e ilustraciones definidas (`arsenal.js` y "Ver reglas" en la pantalla inicial). Falta programar la partida.
+- **Estado:** jugable en local, contra el bot y online (`arsenal-engine.js`). Pendiente: ajustes de equilibrio tras las primeras partidas; el bot solo usa cartas potenciadoras y Ascenso.
 - En lugar de robar una carta cada turno, se roban cartas **de vez en cuando**. La mecánica exacta está por definir.
 - Las cartas se guardan **en la mano** y el jugador decide cuándo usarlas.
 - Serían cartas distintas, con efectos especiales que potencian el juego. Por ejemplo: **atravesar peones**.

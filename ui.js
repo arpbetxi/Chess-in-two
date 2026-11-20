@@ -47,6 +47,7 @@
   const BOT_DELAY = 650;    // pausa entre acciones del bot, para que se vea lo que hace
 
   let state = Engine.newGame();
+  let gameMode = 'destino'; // modo elegido en la pantalla inicial: 'destino' | 'arsenal'
   let mode = null;          // 'local' | 'host' | 'guest' | 'bot'
   let botLevel = 'normal';
   let botTimer = null;
@@ -62,6 +63,15 @@
 
   // ---------- Utilidades ----------
   function online() { return mode === 'host' || mode === 'guest'; }
+  function isArsenal() { return state.game === 'arsenal'; }
+
+  // Partida nueva del modo elegido
+  function createGame() {
+    return gameMode === 'arsenal' ? ArsenalEngine.newGame() : Engine.newGame(null, chosenRules());
+  }
+  function restoreGame(obj) {
+    return obj && obj.game === 'arsenal' ? ArsenalEngine.restore(obj) : Engine.restore(obj);
+  }
 
   function canAct() {
     if (!mode || state.phase === 'over') return false;
@@ -135,6 +145,7 @@
     const flipped = isFlipped();
     const active = canAct();
     const threats = threatenedKings();
+    const aCand = isArsenal() ? arsenalCandidates(active) : null;
     const targets = {};
     for (const m of selMoves) targets[m.to[0] + ',' + m.to[1]] = m;
     const reviveType = active && state.phase === 'revive' && reviveChoice !== null
@@ -161,6 +172,7 @@
 
         const t = targets[r + ',' + c];
         if (t) sq.classList.add(t.capture ? 'capture' : 'target');
+        if (isArsenal()) arsenalDecorate(sq, r, c, aCand);
         if (active && Engine.canConvert(state, r, c)) sq.classList.add('convertible');
         if (reviveType && Engine.canRevivePlace(state, reviveType, r, c)) sq.classList.add('placeable');
 
@@ -204,6 +216,10 @@
     if (online() && state.phase !== 'over') turnText += state.current === myPlayer ? ' — tú' : ' — rival';
     if (mode === 'bot' && state.phase !== 'over') turnText += state.current === myPlayer ? ' — tú' : ' — bot';
     turn.appendChild(document.createTextNode(turnText));
+
+    $('destinoArea').classList.toggle('hidden', isArsenal());
+    $('arsenalPanel').classList.toggle('hidden', !isArsenal());
+    if (isArsenal()) renderArsenalPanel(active);
 
     // Mazo y carta
     $('deckCount').textContent = state.deck.length;
@@ -259,6 +275,8 @@
       text = 'El bot está pensando…';
     } else if (!active) {
       text = 'Turno de tu rival. Espera a que juegue…';
+    } else if (isArsenal()) {
+      text = arsenalInstructions();
     } else {
       switch (state.phase) {
         case 'draw':
@@ -323,13 +341,15 @@
     renderPanel();
     renderScore();
     const tag = $('variantTag');
-    tag.textContent = 'Fin del turno: ' + Engine.RULESETS[state.rules || Engine.DEFAULT_RULESET].name.replace('Termina ', '').toLowerCase();
+    tag.textContent = isArsenal() ? 'Modo Arsenal'
+      : 'Fin del turno: ' + Engine.RULESETS[state.rules || Engine.DEFAULT_RULESET].name.replace('Termina ', '').toLowerCase();
     tag.classList.toggle('hidden', !mode);
   }
 
   // Tras cualquier cambio en la partida
   function afterAction() {
     clearSelection();
+    resetArsenalUi();
     if (state.phase !== 'revive') reviveChoice = null;
     else if (reviveChoice === null || reviveChoice >= state.captured[Engine.myColor(state)].length) reviveChoice = 0;
     if (state.phase === 'over') recordResult(); // antes de dibujar, para que el marcador salga ya actualizado
@@ -355,7 +375,7 @@
   function autoDrawOn() { return $('autoDraw').checked; }
 
   function scheduleAutoDraw() {
-    if (!autoDrawOn() || autoDrawTimer || !canAct() || state.phase !== 'draw') return;
+    if (isArsenal() || !autoDrawOn() || autoDrawTimer || !canAct() || state.phase !== 'draw') return;
     // Espera a que termine la animación de la carta anterior (por ejemplo, la del rival)
     const wait = Math.max(AUTO_DRAW_DELAY, revealUntil - Date.now() + 300);
     autoDrawTimer = setTimeout(function () {
@@ -381,20 +401,27 @@
   }
 
   function showReveal(card, player) {
+    showRevealEl(cardElement(card, false), whoDrew(player),
+      card.kind === 'num' ? MANUAL_TEXT.num(card.n, state.rules) : MANUAL_TEXT[card.kind]);
+  }
+
+  // Muestra en grande cualquier elemento (una carta, la ruleta...)
+  function showRevealEl(element, who, desc, ms) {
+    ms = ms || REVEAL_MS;
     const box = $('cardReveal');
     const front = $('revealFront');
     front.innerHTML = '';
-    front.appendChild(cardElement(card, false));
-    $('revealWho').textContent = whoDrew(player);
-    $('revealDesc').textContent = card.kind === 'num' ? MANUAL_TEXT.num(card.n, state.rules) : MANUAL_TEXT[card.kind];
+    front.appendChild(element);
+    $('revealWho').textContent = who;
+    $('revealDesc').textContent = desc;
     // Reinicia las animaciones aunque ya se estuviera mostrando otra carta
     box.classList.add('hidden');
     box.classList.remove('leaving');
     void box.offsetWidth;
     box.classList.remove('hidden');
     clearTimeout(revealTimer);
-    revealUntil = Date.now() + REVEAL_MS + 350;
-    revealTimer = setTimeout(hideReveal, REVEAL_MS);
+    revealUntil = Date.now() + ms + 350;
+    revealTimer = setTimeout(hideReveal, ms);
   }
 
   function hideReveal() {
@@ -424,7 +451,7 @@
       botTimer = null;
       if (mode !== 'bot' || state.phase === 'over' || state.current !== BOT_PLAYER) return;
       if (Date.now() < revealUntil) { scheduleBot(); return; }
-      const action = Bot.nextAction(state, botLevel);
+      const action = isArsenal() ? ArsenalEngine.botAction(state, botLevel) : Bot.nextAction(state, botLevel);
       if (action && applyAction(action, BOT_PLAYER)) afterAction();
     }, wait);
   }
@@ -439,12 +466,13 @@
   function applyAction(action, player) {
     if (action.type === 'newGame') {
       const names = state.names;
-      state = Engine.newGame(null, state.rules); // la nueva partida mantiene la variante
+      state = isArsenal() ? ArsenalEngine.newGame() : Engine.newGame(null, state.rules); // mismo modo y variante
       state.names = names;                       // y los nombres
       announceColors();
       return true;
     }
     if (state.phase === 'over' || state.current !== player) return false;
+    if (isArsenal()) return ArsenalEngine.apply(state, action, player);
     switch (action.type) {
       case 'draw': return !!Engine.drawCard(state);
       case 'move': return Engine.makeMove(state, { from: action.from, to: action.to }, action.promo);
@@ -473,15 +501,20 @@
     if (applyAction(action, player)) {
       shareState();
       afterAction();
+    } else if (isArsenal()) {
+      resetArsenalUi();
+      aMsg = 'Esa acción no está permitida ahora.';
+      render();
     }
   }
 
   // ---------- Coronación ----------
-  function askPromotion(color, done) {
+  function askPromotion(color, done, options, title) {
     const modal = $('promoModal');
     const box = $('promoChoices');
     box.innerHTML = '';
-    ['q', 'r', 'b', 'n'].forEach(function (t) {
+    modal.querySelector('p').textContent = title || '¿En qué pieza corona el peón?';
+    (options || ['q', 'r', 'b', 'n']).forEach(function (t) {
       const b = document.createElement('button');
       b.innerHTML = '<span class="piece ' + color + '">' + GLYPHS[t] + '</span>';
       b.title = Engine.PIECE_NAMES[t];
@@ -500,6 +533,7 @@
     if (!sq || !canAct()) return;
     const r = Number(sq.dataset.r);
     const c = Number(sq.dataset.c);
+    if (isArsenal()) { arsenalBoardClick(r, c); return; }
 
     if (state.phase === 'moves') {
       const move = selMoves.find(function (m) { return m.to[0] === r && m.to[1] === c; });
@@ -608,7 +642,7 @@
       } else if (mode === 'guest' && msg.t === 'state') {
         // Al (re)conectarse, la partida recibida no debe mostrar como "nueva" la última carta
         if (freshSync) { lastDrawCount = null; freshSync = false; }
-        state = Engine.restore(msg.state);
+        state = restoreGame(msg.state);
         afterAction();
       }
     },
@@ -619,6 +653,397 @@
     state.log.push('🎲 Sorteo de colores: ' + Engine.playerName(state, 1) + ' lleva ' +
       Engine.COLOR_NAMES[state.playerColor[1]] + ' y ' + Engine.playerName(state, 2) + ' lleva ' +
       Engine.COLOR_NAMES[state.playerColor[2]] + '. Empiezan blancas.');
+  }
+
+  // ---------- Modo Arsenal ----------
+  const A = window.ArsenalEngine;
+  const NEEDS = { escudo: 1, trampa: 1, congelar: 1, enroque: 2, posesion: 2 };
+  const ASC_NEXT = { p: ['n', 'b'], n: ['r'], b: ['r'], r: ['q'] };
+  let aPick = null;        // carta de la mano seleccionada: { id, index } (index -1 = Escudo)
+  let aTarget = null;      // eligiendo objetivo en el tablero: { card, picks }
+  let aAscend = false;     // eligiendo la pieza que asciende
+  let aRuleta = [];        // piezas elegidas para la Ruleta
+  let aMsg = '';           // aviso puntual
+  let lastPlayCount = null;
+  let lastRuletaCount = null;
+
+  function resetArsenalUi() {
+    aPick = null;
+    aTarget = null;
+    aAscend = false;
+    aMsg = '';
+    if (!isArsenal() || state.phase !== 'ruleta') aRuleta = [];
+  }
+
+  // Mano que se ve en este dispositivo
+  function handOwner() { return mode === 'local' ? state.current : myPlayer; }
+  function key(r, c) { return r + ',' + c; }
+
+  function arsenalCardEl(id) {
+    const card = A.CARD[id];
+    const el = document.createElement('div');
+    el.className = 'acard a-' + card.rarity;
+    const img = document.createElement('img');
+    img.src = 'cards/arsenal/' + id + '.svg';
+    img.alt = '';
+    const name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = card.name;
+    el.appendChild(img);
+    el.appendChild(name);
+    return el;
+  }
+
+  // Casillas válidas para lo que se está eligiendo ahora
+  function arsenalCandidates(active) {
+    const out = {};
+    if (!active) return out;
+    const b = state.board;
+    const mine = Engine.myColor(state);
+    const add = function (s) { out[key(s[0], s[1])] = true; };
+    if (state.phase === 'ruleta') { A.ruletaEligible(state).forEach(add); return out; }
+    if (state.phase !== 'turn') return out;
+    if (aAscend) {
+      A.ownPieces(state).forEach(function (s) { if (ASC_NEXT[b[s[0]][s[1]].type]) add(s); });
+      return out;
+    }
+    if (!aTarget) return out;
+    const picks = aTarget.picks;
+    switch (aTarget.card) {
+      case 'escudo': A.ownPieces(state).forEach(add); break;
+      case 'trampa':
+        for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) if (!b[r][c]) add([r, c]);
+        break;
+      case 'congelar':
+        for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) add([r, c]);
+        break;
+      case 'enroque':
+        A.ownPieces(state).forEach(function (s) {
+          if (!picks.length || s[0] !== picks[0][0] || s[1] !== picks[0][1]) add(s);
+        });
+        break;
+      case 'posesion':
+        if (!picks.length) A.possessionPieces(state).forEach(add);
+        else A.possessionMoves(state, picks[0][0], picks[0][1]).forEach(function (m) { add(m.to); });
+        break;
+    }
+    return out;
+  }
+
+  function arsenalDecorate(sq, r, c, cand) {
+    const p = state.board[r][c];
+    if (state.frozen && state.frozen.squares.some(function (s) { return s[0] === r && s[1] === c; })) sq.classList.add('a-frozen-zone');
+    if (p && state.frozen && state.frozen.ids.indexOf(p.id) >= 0) sq.classList.add('a-frozen');
+    if (p && A.isShielded(state, p)) sq.classList.add('a-shielded');
+    if (cand && cand[key(r, c)]) sq.classList.add('a-targetable');
+    if (aTarget && aTarget.picks.some(function (s) { return s[0] === r && s[1] === c; })) sq.classList.add('a-picked');
+    if (aRuleta.some(function (s) { return s[0] === r && s[1] === c; })) sq.classList.add('a-ruleta-pick');
+  }
+
+  function arsenalInstructions() {
+    const P = state.current;
+    if (state.phase === 'duplicate') return 'Has robado una carta repetida: decide en el panel qué hacer con ella.';
+    if (state.phase === 'discard') return 'Tienes la mano llena: pulsa en el panel la carta que quieres descartar.';
+    if (state.phase === 'ruleta') return 'Ruleta: elige en el tablero las piezas que se eliminan y confirma en el panel.';
+    if (aAscend) return 'Elige la pieza que quieres ascender.';
+    if (aTarget) {
+      const n = aTarget.picks.length;
+      switch (aTarget.card) {
+        case 'escudo': return 'Elige la pieza tuya que quieres proteger.';
+        case 'trampa': return 'Elige una casilla vacía para la trampa. Después nadie sabrá dónde está, ni siquiera tú.';
+        case 'congelar': return 'Elige el centro de la zona de 3×3 que quieres congelar.';
+        case 'enroque': return n ? 'Elige la segunda pieza del intercambio.' : 'Elige la primera pieza del intercambio.';
+        case 'posesion': return n ? 'Elige la pieza de su propio bando que va a capturar.' : 'Elige la pieza rival que vas a poseer.';
+      }
+    }
+    let t;
+    if (state.movesLeft > 1) t = 'Doble paso: te quedan 2 movimientos.';
+    else if (state.movesThisTurn > 0) t = 'Haz tu segundo movimiento.';
+    else t = 'Mueve una pieza' + (A.canUseCards(state) ? ', o usa antes una carta de tu mano.' : '.');
+    if (state.turnCount[P] <= 1) t += ' En tu primer turno no se pueden usar cartas.';
+    if (state.bloodlust === P) t += ' 🩸 Sed de sangre: si puedes capturar, estás obligado.';
+    if (state.buff === 'fantasma') t += ' 👻 Fantasma: tus piezas atraviesan peones este turno.';
+    if (state.buff === 'salto') t += ' 🐴 Salto de caballo: tus piezas también pueden moverse como un caballo.';
+    return t;
+  }
+
+  function button(text, onClick, cls, disabled) {
+    const b = document.createElement('button');
+    b.textContent = text;
+    if (cls) b.className = cls;
+    b.disabled = !!disabled;
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  function startCard(id) {
+    aPick = null;
+    aMsg = '';
+    if (!NEEDS[id]) { dispatch({ type: 'play', card: id }); return; }
+    aTarget = { card: id, picks: [] };
+    render();
+  }
+
+  function cancelArsenalChoice() {
+    aPick = null;
+    aTarget = null;
+    aAscend = false;
+    aMsg = '';
+    render();
+  }
+
+  function renderArsenalPanel(active) {
+    const P = handOwner() || state.current;
+    const R = P === 1 ? 2 : 1;
+    const myDecision = active && state.current === P;
+
+    // Animaciones: carta usada o ruleta
+    const pc = state.playCount || 0, rc = state.ruletaCount || 0;
+    if (lastRuletaCount !== null && rc > lastRuletaCount && state.lastRuleta) showWheel(state.lastRuleta);
+    else if (lastPlayCount !== null && pc > lastPlayCount && state.lastPlayed) showArsenalPlay(state.lastPlayed);
+    lastPlayCount = pc;
+    lastRuletaCount = rc;
+
+    // Rival
+    $('aRival').innerHTML = '';
+    const rv = document.createElement('span');
+    rv.innerHTML = '<strong></strong>';
+    rv.firstChild.textContent = Engine.playerName(state, R);
+    rv.appendChild(document.createTextNode(': ' + state.hands[R].length + (state.hands[R].length === 1 ? ' carta' : ' cartas') +
+      ' · Escudo ' + (state.escudo[R] ? 'disponible' : 'usado') + ' · ' + state.points[R] + '/' + A.ASC_POINTS + ' puntos'));
+    $('aRival').appendChild(rv);
+
+    // Efectos activos
+    const fx = [];
+    if (state.frozen && state.frozen.ids.length) fx.push('❄️ ' + state.frozen.ids.length + (state.frozen.ids.length === 1 ? ' pieza congelada' : ' piezas congeladas') + ' en el turno de ' + Engine.playerName(state, state.frozen.player) + '.');
+    if (state.shields.length) fx.push('🛡️ Hay ' + (state.shields.length === 1 ? 'una pieza protegida' : state.shields.length + ' piezas protegidas') + ' por un Escudo (marco dorado).');
+    if (state.bloodlust) fx.push('🩸 Sed de sangre: ' + Engine.playerName(state, state.bloodlust) + ' está obligado a capturar en su turno.');
+    if (state.traps.length) fx.push('🪤 Trampas ocultas en el tablero: ' + state.traps.length + '.');
+    if (state.buff) fx.push('✨ Potenciadora activa: ' + A.CARD[state.buff].name + '.');
+    $('aEffects').innerHTML = '';
+    fx.forEach(function (f) {
+      const d = document.createElement('div');
+      d.className = 'a-effect';
+      d.textContent = f;
+      $('aEffects').appendChild(d);
+    });
+
+    // Mano
+    const hand = state.hands[P] || [];
+    $('aHandTitle').textContent = mode === 'local' ? 'Mano de ' + Engine.playerName(state, P) : 'Tu mano';
+    $('aHandCount').textContent = hand.length + '/' + A.HAND_LIMIT;
+    const box = $('aHand');
+    box.innerHTML = '';
+    const items = hand.map(function (id, i) { return { id: id, index: i }; });
+    if (state.escudo[P]) items.push({ id: 'escudo', index: -1 });
+    items.forEach(function (it) {
+      const el = arsenalCardEl(it.id);
+      const discarding = myDecision && state.phase === 'discard';
+      if (discarding && it.index >= 0) el.classList.add('discardable');
+      else if (!(myDecision && state.phase === 'turn' && A.cardAllowed(state, it.id).ok)) el.classList.add('unusable');
+      if (aPick && aPick.index === it.index) el.classList.add('picked');
+      el.title = A.CARD[it.id].text;
+      el.addEventListener('click', function () {
+        if (discarding) {
+          if (it.index >= 0) dispatch({ type: 'discard', index: it.index });
+          return;
+        }
+        aPick = { id: it.id, index: it.index };
+        aTarget = null;
+        aAscend = false;
+        aMsg = '';
+        render();
+      });
+      box.appendChild(el);
+    });
+    if (!items.length) {
+      const e = document.createElement('span');
+      e.className = 'a-hand-empty';
+      e.textContent = 'Sin cartas';
+      box.appendChild(e);
+    }
+
+    // Carta seleccionada
+    const sel = $('aSelected');
+    sel.innerHTML = '';
+    sel.classList.toggle('hidden', !aPick);
+    if (aPick) {
+      const card = A.CARD[aPick.id];
+      const p = document.createElement('p');
+      p.innerHTML = '<strong></strong> · ';
+      p.firstChild.textContent = card.name;
+      p.appendChild(document.createTextNode((card.type === 'accion' ? 'de acción (sustituye a tu movimiento)' : 'potenciadora (no gasta tu movimiento)') + '. ' + card.text));
+      sel.appendChild(p);
+      const allowed = myDecision && state.phase === 'turn' ? A.cardAllowed(state, aPick.id) : { ok: false, why: 'No es tu turno.' };
+      if (!allowed.ok) {
+        const w = document.createElement('p');
+        w.className = 'why';
+        w.textContent = allowed.why;
+        sel.appendChild(w);
+      }
+      const btns = document.createElement('div');
+      btns.className = 'a-btns';
+      const pick = aPick;
+      btns.appendChild(button('Usar', function () { startCard(pick.id); }, '', !allowed.ok));
+      if (pick.index >= 0) {
+        const pts = A.points(pick.id);
+        btns.appendChild(button('Descartar (+' + pts + ')', function () { dispatch({ type: 'discardCard', index: pick.index }); },
+          'secondary', !(myDecision && A.canUseCards(state))));
+      }
+      btns.appendChild(button('Cancelar', cancelArsenalChoice, 'secondary'));
+      sel.appendChild(btns);
+    }
+
+    // Decisiones y avisos
+    const dec = $('aDecision');
+    dec.innerHTML = '';
+    let showDec = false;
+    const addP = function (text) { const p = document.createElement('p'); p.textContent = text; dec.appendChild(p); };
+    if (myDecision && state.phase === 'duplicate') {
+      showDec = true;
+      const card = A.CARD[state.incoming];
+      addP('Has robado ' + card.name + ', que ya tienes en la mano.');
+      const btns = document.createElement('div');
+      btns.className = 'a-btns';
+      btns.appendChild(button('Descartar la nueva (+' + A.points(state.incoming) + ')', function () { dispatch({ type: 'duplicate', choice: 'discard' }); }, 'secondary'));
+      if (card.rarity !== 'epica') {
+        const up = card.rarity === 'comun' ? 'rara' : 'épica';
+        btns.appendChild(button('Combinar en una ' + up, function () { dispatch({ type: 'duplicate', choice: 'combine' }); }));
+      }
+      dec.appendChild(btns);
+    } else if (myDecision && state.phase === 'discard') {
+      showDec = true;
+      addP('Tienes ' + hand.length + ' cartas y el máximo es ' + A.HAND_LIMIT + ': pulsa la carta que quieres descartar (te dará puntos de Ascenso).');
+    } else if (myDecision && state.phase === 'ruleta') {
+      showDec = true;
+      const v = state.ruleta.value;
+      const check = A.ruletaCheck(state, aRuleta);
+      addP('Ha salido ' + (v > 0 ? '+' + v : v) + ': elige ' + (v > 0 ? 'piezas rivales' : 'piezas tuyas') + ' que sumen como máximo ' + Math.abs(v) +
+        ' (peón 1, caballo y alfil 3, torre 5, dama 9). Llevas ' + check.sum + '.');
+      if (!check.ok && check.why) {
+        const w = document.createElement('p');
+        w.className = 'why';
+        w.textContent = check.why;
+        dec.appendChild(w);
+      }
+      const btns = document.createElement('div');
+      btns.className = 'a-btns';
+      btns.appendChild(button('Confirmar', function () { dispatch({ type: 'ruletaPick', squares: aRuleta.slice() }); }, '', !check.ok));
+      dec.appendChild(btns);
+    } else if (aTarget || aAscend) {
+      showDec = true;
+      addP(arsenalInstructions());
+      const btns = document.createElement('div');
+      btns.className = 'a-btns';
+      btns.appendChild(button('Cancelar', cancelArsenalChoice, 'secondary'));
+      dec.appendChild(btns);
+    }
+    if (aMsg) {
+      showDec = true;
+      const w = document.createElement('p');
+      w.className = 'why';
+      w.textContent = aMsg;
+      dec.appendChild(w);
+    }
+    dec.classList.toggle('hidden', !showDec);
+
+    // Puntos de Ascenso
+    const pts = state.points[P];
+    $('aPtsFill').style.width = Math.min(100, pts / A.ASC_POINTS * 100) + '%';
+    $('aPts').textContent = pts + '/' + A.ASC_POINTS;
+    $('aAscend').disabled = !(myDecision && state.phase === 'turn' && state.movesThisTurn === 0 && pts >= A.ASC_POINTS);
+  }
+
+  $('aAscend').addEventListener('click', function () {
+    aAscend = true;
+    aPick = null;
+    aTarget = null;
+    aMsg = '';
+    render();
+  });
+
+  function arsenalBoardClick(r, c) {
+    const b = state.board;
+    if (state.phase === 'ruleta') {
+      if (!A.ruletaEligible(state).some(function (s) { return s[0] === r && s[1] === c; })) return;
+      const i = aRuleta.findIndex(function (s) { return s[0] === r && s[1] === c; });
+      if (i >= 0) aRuleta.splice(i, 1); else aRuleta.push([r, c]);
+      render();
+      return;
+    }
+    if (state.phase !== 'turn') return;
+    if (aTarget || aAscend) {
+      const cand = arsenalCandidates(true);
+      if (!cand[key(r, c)]) { aMsg = 'Esa casilla no vale para lo que estás eligiendo.'; render(); return; }
+      if (aAscend) {
+        const p = b[r][c];
+        const opts = ASC_NEXT[p.type];
+        const send = function (to) { dispatch({ type: 'ascend', r: r, c: c, to: to }); };
+        if (opts.length > 1) askPromotion(p.color, send, opts, '¿En qué pieza asciende el peón?');
+        else send(opts[0]);
+        return;
+      }
+      aTarget.picks.push([r, c]);
+      const id = aTarget.card;
+      if (aTarget.picks.length >= NEEDS[id]) {
+        const pk = aTarget.picks;
+        let target;
+        if (id === 'enroque') target = { a: pk[0], b: pk[1] };
+        else if (id === 'posesion') target = { from: pk[0], to: pk[1] };
+        else target = { sq: pk[0] };
+        dispatch({ type: 'play', card: id, target: target });
+      } else {
+        aMsg = '';
+        render();
+      }
+      return;
+    }
+    // Movimiento normal
+    const move = selMoves.find(function (m) { return m.to[0] === r && m.to[1] === c; });
+    if (move) {
+      const send = function (promo) { dispatch({ type: 'move', from: move.from, to: move.to, promo: promo }); };
+      if (A.needsPromotion(state, move)) askPromotion(b[move.from[0]][move.from[1]].color, send);
+      else send();
+      return;
+    }
+    const p = b[r][c];
+    if (p && p.color === Engine.myColor(state) && !(selected && selected[0] === r && selected[1] === c)) {
+      selected = [r, c];
+      selMoves = A.legalMovesFrom(state, r, c);
+      aPick = null;
+    } else {
+      clearSelection();
+    }
+    render();
+  }
+
+  function playVerb(player) {
+    if (mode === 'local' || !mode) return Engine.playerName(state, player) + ' usa';
+    if (player === myPlayer) return 'Has usado';
+    return mode === 'bot' ? 'El bot usa' : 'Tu rival usa';
+  }
+
+  function showArsenalPlay(lp) {
+    showRevealEl(arsenalCardEl(lp.card), playVerb(lp.player), A.CARD[lp.card].text);
+  }
+
+  function showWheel(info) {
+    const wrap = document.createElement('div');
+    wrap.className = 'wheel-wrap';
+    const img = document.createElement('img');
+    img.src = 'cards/arsenal/ruleta-rueda.svg';
+    img.alt = 'Ruleta';
+    wrap.appendChild(img);
+    showRevealEl(wrap, '🎡 ' + playVerb(info.player) + ' la Ruleta', 'Girando…', 3800);
+    const turns = 360 * 5 - (info.idx * 45 + 22.5);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { img.style.transform = 'rotate(' + turns + 'deg)'; });
+    });
+    const v = info.value;
+    setTimeout(function () {
+      $('revealDesc').textContent = 'Ha salido ' + (v > 0 ? '+' + v : v) + ': se eliminan piezas ' +
+        (v > 0 ? 'rivales' : 'propias') + ' por valor de hasta ' + Math.abs(v) + '.';
+    }, 1900);
   }
 
   // ---------- Nombres y marcador ----------
@@ -724,10 +1149,11 @@
     stopBot();
     const saved = loadSave();
     let code = null;
-    state = Engine.newGame(null, chosenRules());
-    if (saved && saved.state && saved.state.phase !== 'over' &&
+    state = createGame();
+    const savedMode = saved && saved.state && saved.state.game === 'arsenal' ? 'arsenal' : 'destino';
+    if (saved && saved.state && saved.state.phase !== 'over' && savedMode === gameMode &&
         window.confirm('Tienes una partida online sin terminar (sala ' + saved.code + '). ¿Quieres continuarla?')) {
-      state = Engine.restore(saved.state);
+      state = restoreGame(saved.state);
       code = saved.code;
     }
     if (!state.names || state.names[1] === 'Jugador 1') {
@@ -770,7 +1196,7 @@
     myPlayer = 1;
     botLevel = $('botLevel').value;
     manualFlip = false;
-    state = Engine.newGame(null, chosenRules());
+    state = createGame();
     state.names = { 1: myName(), 2: 'Bot (' + (botLevel === 'facil' ? 'Fácil' : 'Normal') + ')' };
     announceColors();
     lobbyStatus('');
@@ -784,7 +1210,7 @@
     mode = 'local';
     myPlayer = null;
     manualFlip = false;
-    state = Engine.newGame(null, chosenRules());
+    state = createGame();
     let rival = '';
     try { rival = localStorage.getItem('ajedrezCartas.rivalLocal') || ''; } catch (e) { /* nada */ }
     rival = cleanName(window.prompt('Nombre del otro jugador (Jugador 2):', rival || 'Jugador 2'), 'Jugador 2');
@@ -839,7 +1265,11 @@
 
   buildManual();
   ['infoBtn', 'panelManualBtn', 'lobbyManualBtn'].forEach(function (id) {
-    $(id).addEventListener('click', openManual);
+    $(id).addEventListener('click', function () {
+      const arsenal = mode ? isArsenal() : gameMode === 'arsenal';
+      if (arsenal && window.openArsenalRules) window.openArsenalRules();
+      else openManual();
+    });
   });
   $('manualClose').addEventListener('click', closeManual);
   $('manualModal').addEventListener('click', function (e) { if (e.target === this) closeManual(); });
@@ -915,6 +1345,7 @@
   window.ajedrez = {
     get state() { return state; },
     openManual: openManual,
+    setGameMode: function (m) { gameMode = m; },
     render: render,
   };
 

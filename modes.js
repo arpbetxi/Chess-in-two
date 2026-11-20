@@ -10,10 +10,17 @@
   function showModes() { $('modeSelect').classList.remove('hidden'); }
   function hideModes() { $('modeSelect').classList.add('hidden'); }
 
-  $('playDestino').addEventListener('click', function () {
-    hideModes();          // debajo queda el menú de Destino (online, bot o local)
+  // Abre el menú (online, bot o local) preparado para el modo elegido
+  function chooseMode(m) {
+    window.ajedrez.setGameMode(m);
+    $('lobbyTitle').textContent = 'In 2 Chess · ' + (m === 'arsenal' ? 'Arsenal' : 'Destino');
+    $('rulesRow').classList.toggle('hidden', m === 'arsenal'); // la variante de fin de turno es solo de Destino
+    hideModes();
     $('lobby').classList.remove('hidden');
-  });
+  }
+
+  $('playDestino').addEventListener('click', function () { chooseMode('destino'); });
+  $('playArsenal').addEventListener('click', function () { chooseMode('arsenal'); });
   $('rulesDestino').addEventListener('click', function () { window.ajedrez.openManual(); });
   $('backToModes').addEventListener('click', showModes);
 
@@ -82,6 +89,7 @@
   function closeArsenal() { $('arsenalModal').classList.add('hidden'); }
 
   $('rulesArsenal').addEventListener('click', openArsenal);
+  window.openArsenalRules = openArsenal;
   $('arsenalClose').addEventListener('click', closeArsenal);
   $('arsenalModal').addEventListener('click', function (e) { if (e.target === this) closeArsenal(); });
   document.addEventListener('keydown', function (e) {
