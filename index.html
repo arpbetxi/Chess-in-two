@@ -9,28 +9,35 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#1e2126">
   <!-- ?v=... obliga al navegador a descargar la versión nueva tras cada cambio -->
-  <link rel="stylesheet" href="style.css?v=20261120k">
+  <link rel="stylesheet" href="style.css?v=20261120l">
 </head>
 <body>
   <header>
-    <h1>In 2 Chess</h1>
+    <div class="brand"><h1>In 2 Chess</h1><span id="modeChip" class="mode-chip hidden"></span></div>
     <div class="header-buttons">
       <span id="netStatus" class="net-status hidden"></span>
-      <button id="infoBtn" class="info-btn" title="Manual: reglas y cartas" aria-label="Abrir el manual">i</button>
-      <button id="menuBtn" class="secondary">Menú</button>
-      <button id="flipBtn" class="secondary" title="Girar la vista del tablero">Girar vista</button>
-      <button id="newGameBtn" class="secondary">Nueva partida</button>
+      <button id="infoBtn" class="icon-btn" title="Reglas y cartas" aria-label="Reglas y cartas"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.5"/></svg></button>
+      <button id="flipBtn" class="icon-btn" title="Girar la vista del tablero" aria-label="Girar la vista del tablero"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16"/><path d="M4 7l3-3 3 3"/><path d="M17 20V4"/><path d="M14 17l3 3 3-3"/></svg></button>
+      <button id="newGameBtn" class="icon-btn" title="Nueva partida" aria-label="Nueva partida"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button>
+      <button id="menuBtn" class="icon-btn" title="Menú" aria-label="Menú"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
     </div>
   </header>
 
-  <main>
-    <section class="board-wrap">
-      <div id="board" class="board" aria-label="Tablero"></div>
+  <main class="game">
+    <section class="board-col">
+      <div id="rivalBar" class="player-bar"></div>
+      <div class="board-wrap">
+        <div id="board" class="board" aria-label="Tablero"></div>
+      </div>
+      <div id="meBar" class="player-bar"></div>
     </section>
 
     <aside class="panel">
-      <div id="turn" class="turn"></div>
-      <div id="variantTag" class="variant-tag hidden"></div>
+      <div class="panel-head">
+        <div id="turn" class="turn"></div>
+        <div id="variantTag" class="variant-tag hidden"></div>
+      </div>
+      <div id="phaseSteps" class="phase-steps hidden"></div>
 
       <!-- Panel del modo Arsenal -->
       <div id="arsenalPanel" class="arsenal-panel hidden">
@@ -64,28 +71,45 @@
 
       <p id="instructions" class="instructions"></p>
 
-      <div id="scoreBox" class="score-box hidden">
-        <div class="score-head">
-          <h3>Marcador</h3>
-          <button id="scoreReset" class="link-btn small" title="Poner el marcador a cero">Reiniciar</button>
+      <div id="infoPanel" class="info-panel">
+        <div class="sheet-head">
+          <span id="sheetTitle">Información</span>
+          <button id="sheetClose" class="close-btn" aria-label="Cerrar">✕</button>
         </div>
-        <div id="scoreRows" class="score-rows"></div>
-      </div>
-
-      <div class="captured">
-        <h3>Capturadas</h3>
-        <div class="captured-row"><span class="label">Blancas:</span><div id="captured-w" class="captured-list"></div></div>
-        <div class="captured-row"><span class="label">Negras:</span><div id="captured-b" class="captured-list"></div></div>
-      </div>
-
-      <button id="panelManualBtn" class="secondary manual-link">¿Cómo se juega? Ver el manual</button>
-
-      <div class="log">
-        <h3>Registro</h3>
-        <ol id="log"></ol>
+        <div class="tabs" role="tablist">
+          <button class="tab active" role="tab" data-tab="log">Registro</button>
+          <button class="tab" role="tab" data-tab="captured">Capturadas</button>
+          <button class="tab" role="tab" data-tab="score">Marcador</button>
+        </div>
+        <div class="tab-body log" data-tab="log">
+          <ol id="log"></ol>
+        </div>
+        <div class="tab-body captured hidden" data-tab="captured">
+          <div class="captured-row"><span class="label">Blancas:</span><div id="captured-w" class="captured-list"></div></div>
+          <div class="captured-row"><span class="label">Negras:</span><div id="captured-b" class="captured-list"></div></div>
+        </div>
+        <div class="tab-body hidden" data-tab="score">
+          <div id="scoreBox" class="score-box hidden">
+            <div class="score-head">
+              <h3>Marcador</h3>
+              <button id="scoreReset" class="link-btn small" title="Poner el marcador a cero">Reiniciar</button>
+            </div>
+            <div id="scoreRows" class="score-rows"></div>
+          </div>
+        </div>
+        <button id="panelManualBtn" class="secondary manual-link">¿Cómo se juega? Ver el manual</button>
       </div>
     </aside>
   </main>
+
+  <!-- Barra inferior en el móvil -->
+  <nav id="mobileNav" class="mobile-nav" aria-label="Más opciones">
+    <button data-sheet="log"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg><span>Registro</span></button>
+    <button data-sheet="score"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4"/><path d="M16 6h3a3 3 0 0 1-3 4"/><path d="M12 13v4"/><path d="M8 20h8"/></svg><span>Marcador</span></button>
+    <button id="navRules"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg><span>Reglas</span></button>
+    <button id="navMenu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg><span>Menú</span></button>
+  </nav>
+  <div id="sheetBackdrop" class="sheet-backdrop hidden"></div>
 
   <!-- Pantalla inicial: elegir el modo de juego -->
   <div id="modeSelect" class="mode-select" role="dialog" aria-labelledby="modeTitle">
@@ -190,42 +214,92 @@
   </div>
 
   <!-- Menú inicial: online o local -->
-  <div id="lobby" class="modal">
-    <div class="modal-box lobby-box">
-      <button id="backToModes" class="link-btn back-modes">← Cambiar de modo</button>
-      <p id="lobbyTitle">In 2 Chess · Destino</p>
-      <div class="rules-row">
-        <label for="playerName">Tu nombre (para el marcador)</label>
-        <input id="playerName" maxlength="20" placeholder="Tu nombre" autocomplete="nickname">
-      </div>
-      <div id="rulesRow" class="rules-row">
-        <label for="rulesSelect">Fin del turno</label>
-        <select id="rulesSelect">
-          <option value="actual">Al amenazar al rey</option>
-          <option value="original">Al capturar una pieza</option>
-        </select>
-      </div>
-      <button id="hostBtn">Crear partida online</button>
-      <div class="join-row">
-        <input id="joinCode" maxlength="6" placeholder="Código" autocomplete="off">
-        <button id="joinBtn">Unirse</button>
-      </div>
-      <div class="bot-row">
-        <button id="botBtn">Jugar contra el bot</button>
-        <select id="botLevel" aria-label="Dificultad del bot">
-          <option value="facil">Fácil</option>
-          <option value="normal" selected>Normal</option>
-        </select>
-      </div>
-      <button id="localBtn" class="secondary">Jugar en este ordenador</button>
-      <button id="lobbyManualBtn" class="link-btn">¿Primera vez? Lee el manual</button>
-      <div id="lobbyStatus" class="lobby-status"></div>
-      <button id="lobbyClose" class="secondary hidden">Volver a la partida</button>
+  <div id="lobby" class="lobby-screen">
+    <div class="lobby-layout">
+      <section id="lobbySide" class="lobby-side">
+        <button id="backToModes" class="link-btn back-modes">← Cambiar de modo</button>
+        <div id="lobbyArt" class="lobby-art" aria-hidden="true"></div>
+        <h2 id="lobbyTitle">Destino</h2>
+        <p id="lobbyTagline" class="lobby-tagline"></p>
+        <ol id="lobbySummary" class="lobby-summary"></ol>
+        <button id="lobbyManualBtn" class="link-btn">Ver reglas completas y todas las cartas</button>
+      </section>
+
+      <section class="lobby-main">
+        <div class="lobby-step">
+          <span class="step-label">Paso 1</span>
+          <label for="playerName" class="step-q">¿Cómo te llamas?</label>
+          <input id="playerName" maxlength="20" placeholder="Tu nombre (para el marcador)" autocomplete="nickname">
+        </div>
+
+        <div class="lobby-step">
+          <span class="step-label">Paso 2</span>
+          <div class="step-q" id="oppQ">¿Contra quién juegas?</div>
+          <div class="opp-tabs" role="tablist" aria-labelledby="oppQ">
+            <button class="opp-tab active" role="tab" data-opp="online"><strong>Online</strong><span>Con código de sala</span></button>
+            <button class="opp-tab" role="tab" data-opp="bot"><strong>El bot</strong><span>Fácil o normal</span></button>
+            <button class="opp-tab" role="tab" data-opp="local"><strong>En este dispositivo</strong><span>Dos en una pantalla</span></button>
+          </div>
+          <div class="opp-body" data-opp="online">
+            <div class="online-choice">
+              <div class="oc-part">
+                <strong>Crear una sala nueva</strong>
+                <span>Te damos un código para que se lo pases a tu amigo.</span>
+              </div>
+              <span class="oc-or">o</span>
+              <div class="oc-part">
+                <label for="joinCode"><strong>Unirse con un código</strong></label>
+                <input id="joinCode" maxlength="6" placeholder="CÓDIGO" autocomplete="off">
+              </div>
+            </div>
+          </div>
+          <div class="opp-body hidden" data-opp="bot">
+            <div class="bot-choice">
+              <span class="bc-label">Dificultad</span>
+              <div class="seg" role="group" aria-label="Dificultad del bot">
+                <button class="seg-btn" data-level="facil">Fácil</button>
+                <button class="seg-btn active" data-level="normal">Normal</button>
+              </div>
+              <select id="botLevel" class="hidden" aria-hidden="true" tabindex="-1">
+                <option value="facil">Fácil</option>
+                <option value="normal" selected>Normal</option>
+              </select>
+            </div>
+          </div>
+          <div class="opp-body hidden" data-opp="local">
+            <p class="local-text"><strong>Una pantalla, dos jugadores.</strong> Os vais pasando el ordenador o el móvil en cada turno.</p>
+          </div>
+        </div>
+
+        <div id="rulesRow" class="lobby-step">
+          <span class="step-label">Paso 3</span>
+          <label for="rulesSelect" class="step-q">Variante: ¿cuándo termina el turno?</label>
+          <select id="rulesSelect">
+            <option value="actual">Al amenazar al rey</option>
+            <option value="original">Al capturar una pieza</option>
+          </select>
+        </div>
+
+        <div id="lobbyStatus" class="lobby-status"></div>
+
+        <div class="lobby-cta">
+          <button id="lobbyPlay" class="play-btn">Crear sala</button>
+          <button id="lobbyClose" class="secondary hidden">Volver a la partida</button>
+        </div>
+
+        <!-- Botones internos (los usa el botón Jugar) -->
+        <div class="hidden" aria-hidden="true">
+          <button id="hostBtn" tabindex="-1"></button>
+          <button id="joinBtn" tabindex="-1"></button>
+          <button id="botBtn" tabindex="-1"></button>
+          <button id="localBtn" tabindex="-1"></button>
+        </div>
+      </section>
     </div>
   </div>
 
   <!-- Buzón de sugerencias -->
-  <button id="suggestBtn" class="suggest-fab" title="Enviar una sugerencia">💡 Sugerencias</button>
+  <button id="suggestBtn" class="suggest-fab" title="Enviar una sugerencia" aria-label="Sugerencias"><span aria-hidden="true">💡</span><span class="sf-text"> Sugerencias</span></button>
   <div id="suggestModal" class="modal suggest-modal hidden" role="dialog" aria-labelledby="suggestTitle">
     <div class="modal-box suggest-box">
       <div class="manual-head">
@@ -350,13 +424,13 @@
       document.write('<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"><\/script>');
     }
   </script>
-  <script src="config.js?v=20261120k"></script>
-  <script src="engine.js?v=20261120k"></script>
-  <script src="net.js?v=20261120k"></script>
-  <script src="bot.js?v=20261120k"></script>
-  <script src="arsenal.js?v=20261120k"></script>
-  <script src="arsenal-engine.js?v=20261120k"></script>
-  <script src="ui.js?v=20261120k"></script>
-  <script src="modes.js?v=20261120k"></script>
+  <script src="config.js?v=20261120l"></script>
+  <script src="engine.js?v=20261120l"></script>
+  <script src="net.js?v=20261120l"></script>
+  <script src="bot.js?v=20261120l"></script>
+  <script src="arsenal.js?v=20261120l"></script>
+  <script src="arsenal-engine.js?v=20261120l"></script>
+  <script src="ui.js?v=20261120l"></script>
+  <script src="modes.js?v=20261120l"></script>
 </body>
 </html>

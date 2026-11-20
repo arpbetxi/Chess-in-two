@@ -10,14 +10,91 @@
   function showModes() { $('modeSelect').classList.remove('hidden'); }
   function hideModes() { $('modeSelect').classList.add('hidden'); }
 
-  // Abre el menú (online, bot o local) preparado para el modo elegido
+  // Ficha de cada modo en la pantalla de inicio
+  const MODE_INFO = {
+    destino: {
+      title: 'Destino',
+      tagline: 'Cada turno robas una carta y ella decide por ti.',
+      summary: [
+        'Cada turno: roba una carta y haz lo que diga.',
+        'Las cartas de número te dan 1, 2 o 3 movimientos; las especiales convierten, reviven o bloquean.',
+        'Gana quien captura el rey rival.',
+      ],
+    },
+    arsenal: {
+      title: 'Arsenal',
+      tagline: 'Ajedrez con una mano de cartas que tú decides cuándo usar.',
+      summary: [
+        'Cada turno: si quieres, una carta; después, tu movimiento.',
+        'Mano de hasta 3 cartas. Descartar da puntos para ascender piezas.',
+        'Gana quien captura el rey rival.',
+      ],
+    },
+  };
+
+  // Prepara la pantalla de inicio para el modo elegido
+  function refreshLobby(m) {
+    const info = MODE_INFO[m] || MODE_INFO.destino;
+    $('lobby').classList.toggle('arsenal', m === 'arsenal');
+    $('lobbyTitle').textContent = info.title;
+    $('lobbyTagline').textContent = info.tagline;
+    const ol = $('lobbySummary');
+    ol.innerHTML = '';
+    info.summary.forEach(function (t) {
+      const li = document.createElement('li');
+      li.textContent = t;
+      ol.appendChild(li);
+    });
+    const art = document.querySelector(m === 'arsenal' ? '.mode-arsenal .mode-art' : '.mode-destino .mode-art');
+    $('lobbyArt').innerHTML = '';
+    if (art) $('lobbyArt').appendChild(art.cloneNode(true));
+    $('rulesRow').classList.toggle('hidden', m === 'arsenal'); // la variante de fin de turno es solo de Destino
+    updatePlayLabel();
+  }
+  window.refreshLobby = refreshLobby;
+
+  // Abre la pantalla de inicio preparada para el modo elegido
   function chooseMode(m) {
     window.ajedrez.setGameMode(m);
-    $('lobbyTitle').textContent = 'In 2 Chess · ' + (m === 'arsenal' ? 'Arsenal' : 'Destino');
-    $('rulesRow').classList.toggle('hidden', m === 'arsenal'); // la variante de fin de turno es solo de Destino
+    refreshLobby(m);
     hideModes();
     $('lobby').classList.remove('hidden');
   }
+
+  // ---------- Contra quién: pestañas y botón Jugar ----------
+  let opp = 'online';
+  function setOpp(o) {
+    opp = o;
+    document.querySelectorAll('.opp-tab').forEach(function (b) {
+      const on = b.dataset.opp === o;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    document.querySelectorAll('.opp-body').forEach(function (d) { d.classList.toggle('hidden', d.dataset.opp !== o); });
+    updatePlayLabel();
+  }
+  function updatePlayLabel() {
+    const code = $('joinCode').value.trim();
+    $('lobbyPlay').textContent = opp === 'online' ? (code ? 'Unirse a la sala' : 'Crear sala')
+      : opp === 'bot' ? 'Jugar contra el bot' : 'Empezar partida';
+  }
+  document.querySelectorAll('.opp-tab').forEach(function (b) {
+    b.addEventListener('click', function () { setOpp(b.dataset.opp); });
+  });
+  document.querySelectorAll('.seg-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.seg-btn').forEach(function (x) { x.classList.toggle('active', x === b); });
+      $('botLevel').value = b.dataset.level;
+    });
+  });
+  $('joinCode').addEventListener('input', updatePlayLabel);
+  $('joinCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('lobbyPlay').click(); });
+  $('lobbyPlay').addEventListener('click', function () {
+    if (opp === 'online') $($('joinCode').value.trim() ? 'joinBtn' : 'hostBtn').click();
+    else if (opp === 'bot') $('botBtn').click();
+    else $('localBtn').click();
+  });
+  setOpp('online');
 
   $('playDestino').addEventListener('click', function () { chooseMode('destino'); });
   $('playArsenal').addEventListener('click', function () { chooseMode('arsenal'); });

@@ -337,14 +337,160 @@
       : 'Sin conexión';
   }
 
+  // ---------- Nueva interfaz: etiqueta del modo, barras de jugador y fases del turno ----------
+  const ICON_SHIELD = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f0d68a" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>';
+
+  function playerSub(p) {
+    const col = Engine.COLOR_NAMES[state.playerColor[p]];
+    if (mode === 'local' || !mode) return col;
+    if (p === myPlayer) return col + ' · tú';
+    return col + (mode === 'bot' ? ' · bot' : ' · rival');
+  }
+
+  function renderBar(el, p) {
+    el.innerHTML = '';
+    el.classList.toggle('active', !!mode && state.phase !== 'over' && state.current === p);
+    const color = state.playerColor[p];
+    const dot = document.createElement('div');
+    dot.className = 'pb-dot ' + color;
+    const txt = document.createElement('div');
+    txt.className = 'pb-text';
+    const nm = document.createElement('div');
+    nm.className = 'pb-name';
+    nm.textContent = Engine.playerName(state, p);
+    const sub = document.createElement('div');
+    sub.className = 'pb-sub';
+    sub.textContent = playerSub(p);
+    txt.appendChild(nm);
+    txt.appendChild(sub);
+    el.appendChild(dot);
+    el.appendChild(txt);
+    const right = document.createElement('div');
+    right.className = 'pb-right';
+    // Piezas que este jugador ha capturado
+    const caps = state.captured[color === 'w' ? 'b' : 'w'] || [];
+    if (caps.length) {
+      const c = document.createElement('span');
+      c.className = 'pb-caps ' + (color === 'w' ? 'b' : 'w');
+      c.textContent = caps.map(function (t) { return GLYPHS[t]; }).join('');
+      right.appendChild(c);
+    }
+    if (isArsenal() && p !== handOwner()) {
+      const n = state.hands[p].length;
+      const backs = document.createElement('span');
+      backs.className = 'pb-backs';
+      backs.title = n + (n === 1 ? ' carta' : ' cartas');
+      for (let i = 0; i < n; i++) {
+        const b = document.createElement('span');
+        b.className = 'pb-back';
+        backs.appendChild(b);
+      }
+      right.appendChild(backs);
+      if (state.escudo[p]) right.insertAdjacentHTML('beforeend', ICON_SHIELD);
+      const pts = document.createElement('span');
+      pts.textContent = state.points[p] + '/' + ArsenalEngine.ASC_POINTS;
+      right.appendChild(pts);
+    }
+    el.appendChild(right);
+  }
+
+  function step(n, title, sub, cls) {
+    return '<div class="phase-step ' + cls + '"><span class="num">' + (cls === 'done' ? '✓' : n) + '</span>' +
+      '<div style="min-width:0"><div class="t">' + title + '</div><div class="s">' + sub + '</div></div></div>';
+  }
+
+  function renderSteps() {
+    const box = $('phaseSteps');
+    if (!mode || state.phase === 'over') { box.classList.add('hidden'); return; }
+    box.classList.remove('hidden');
+    let html = '';
+    if (isArsenal()) {
+      const P = state.current;
+      const choosing = ['robo', 'ruleta', 'duplicate', 'discard'].indexOf(state.phase) >= 0;
+      const cardStep = choosing || ArsenalEngine.canUseCards(state);
+      let cardSub;
+      if (state.phase === 'robo') cardSub = 'Robo: eligiendo carta';
+      else if (state.phase === 'ruleta') cardSub = 'Ruleta: eligiendo piezas';
+      else if (state.phase === 'duplicate' || state.phase === 'discard') cardSub = 'Decidiendo carta';
+      else if (cardStep) cardSub = 'Opcional';
+      else if (state.cardUsed && state.lastPlayed && state.lastPlayed.player === P) cardSub = ArsenalEngine.CARD[state.lastPlayed.card].name;
+      else if (state.turnCount[P] <= 1) cardSub = 'No en el primer turno';
+      else cardSub = 'Sin carta';
+      const moveSub = state.movesLeft > 1 ? 'Doble paso: quedan ' + state.movesLeft
+        : state.movesThisTurn > 0 ? 'Segundo movimiento' : 'Mueve una pieza';
+      html = step(1, 'Carta', cardSub, cardStep ? 'on' : 'done') + step(2, 'Movimiento', moveSub, cardStep ? '' : 'on');
+    } else {
+      const drawing = state.phase === 'draw';
+      let moveSub = 'Según la carta';
+      if (state.phase === 'moves' && state.card && state.card.n) moveSub = (state.card.n - state.movesLeft + 1) + 'º de ' + state.card.n;
+      else if (state.phase === 'moves') moveSub = state.movesLeft + (state.movesLeft === 1 ? ' movimiento' : ' movimientos');
+      else if (state.phase === 'convert') moveSub = 'Convertir piezas';
+      else if (state.phase === 'revive') moveSub = 'Revivir piezas';
+      const drawSub = drawing ? 'Roba una carta' : (state.card ? Engine.cardName(state.card) : 'Hecho');
+      html = step(1, 'Robar', drawSub, drawing ? 'on' : 'done') + step(2, 'Mover', moveSub, drawing ? '' : 'on');
+    }
+    box.innerHTML = html;
+  }
+
+  function renderLayout() {
+    document.body.classList.toggle('arsenal-on', isArsenal());
+    const chip = $('modeChip');
+    chip.classList.toggle('hidden', !mode);
+    chip.classList.toggle('arsenal', isArsenal());
+    chip.textContent = isArsenal() ? 'Arsenal' : 'Destino';
+    // Abajo, el jugador cuyo color está abajo en el tablero
+    const bottomColor = isFlipped() ? 'b' : 'w';
+    const bottom = state.playerColor[1] === bottomColor ? 1 : 2;
+    const showBars = !!mode;
+    $('rivalBar').classList.toggle('hidden', !showBars);
+    $('meBar').classList.toggle('hidden', !showBars);
+    if (showBars) {
+      renderBar($('rivalBar'), bottom === 1 ? 2 : 1);
+      renderBar($('meBar'), bottom);
+    }
+    renderSteps();
+  }
+
+  // Pestañas del panel (registro, capturadas, marcador)
+  function showTab(name) {
+    document.querySelectorAll('.tabs .tab').forEach(function (t) {
+      const on = t.dataset.tab === name;
+      t.classList.toggle('active', on);
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    document.querySelectorAll('.tab-body').forEach(function (b) { b.classList.toggle('hidden', b.dataset.tab !== name); });
+  }
+  document.querySelectorAll('.tabs .tab').forEach(function (t) {
+    t.addEventListener('click', function () { showTab(t.dataset.tab); });
+  });
+  // Móvil: hoja inferior y barra de navegación
+  function openSheet(tab) {
+    showTab(tab);
+    $('sheetTitle').textContent = 'Partida';
+    document.body.classList.add('sheet-open');
+    $('sheetBackdrop').classList.remove('hidden');
+  }
+  function closeSheet() {
+    document.body.classList.remove('sheet-open');
+    $('sheetBackdrop').classList.add('hidden');
+  }
+  document.querySelectorAll('.mobile-nav [data-sheet]').forEach(function (b) {
+    b.addEventListener('click', function () { openSheet(b.dataset.sheet); });
+  });
+  $('sheetClose').addEventListener('click', closeSheet);
+  $('sheetBackdrop').addEventListener('click', closeSheet);
+  $('navRules').addEventListener('click', function () { $('infoBtn').click(); });
+  $('navMenu').addEventListener('click', function () { $('menuBtn').click(); });
+
   function render() {
     renderBoard();
     renderPanel();
     renderScore();
+    renderLayout();
     const tag = $('variantTag');
     tag.textContent = isArsenal() ? 'Modo Arsenal'
       : 'Fin del turno: ' + Engine.RULESETS[state.rules || Engine.DEFAULT_RULESET].name.replace('Termina ', '').toLowerCase();
-    tag.classList.toggle('hidden', !mode);
+    tag.classList.toggle('hidden', !mode || isArsenal()); // en Arsenal ya lo dice la etiqueta de la cabecera
   }
 
   // Tras cualquier cambio en la partida
@@ -612,6 +758,7 @@
     el.classList.toggle('error', !!isError);
   }
   function showLobby() {
+    if (window.refreshLobby) window.refreshLobby(mode ? (isArsenal() ? 'arsenal' : 'destino') : gameMode);
     $('lobbyClose').classList.toggle('hidden', !mode);
     $('lobby').classList.remove('hidden');
   }
