@@ -11,7 +11,8 @@
   const VS_NAMES = { online: 'online', bot: 'contra el bot', local: 'en este dispositivo' };
   const RESULT_NAMES = { win: 'Victoria', loss: 'Derrota', draw: 'Tablas', local: 'Partida local' };
 
-  const configured = !!(window.FIREBASE_CONFIG || window.CuentasBackend);
+  const off = /[?&]sincuentas/.test(location.search);
+  const configured = !!window.CuentasBackend || (!!window.FIREBASE_CONFIG && !off);
   let backend = null;
   let user = null;
   let failed = false;

@@ -1,0 +1,6 @@
+{
+  "name": "in-2-chess-tests",
+  "private": true,
+  "description": "Pruebas de In 2 Chess (solo para desarrollo; la web no lo necesita)",
+  "devDependencies": { "peer": "^1.0.2" }
+}
