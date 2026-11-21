@@ -14,6 +14,32 @@
   // Glifos rellenos para los dos colores; el color se da con CSS.
   // ︎ pide la versión de texto (evita que el peón salga como emoji).
   const GLYPHS = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟︎' };
+  // Las piezas se dibujan como imágenes (SVG) y no como texto: así el modo oscuro
+  // de algunos navegadores (Samsung Internet) no cambia sus colores.
+  const PIECE_SRC = {};
+  function pieceSrc(type, color) {
+    const key = type + color;
+    if (!PIECE_SRC[key]) {
+      const fill = color === 'w' ? '#ffffff' : '#1b1b1b';
+      const stroke = color === 'w' ? '#000000' : '#ffffff88';
+      const sw = color === 'w' ? 5 : 2;
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+        '<text x="50" y="84" text-anchor="middle" font-size="90" ' +
+        'font-family="Segoe UI Symbol, DejaVu Sans, Noto Sans Symbols 2, Noto Sans Symbols, sans-serif" ' +
+        'fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '" paint-order="stroke" stroke-linejoin="round">' +
+        GLYPHS[type] + '</text></svg>';
+      PIECE_SRC[key] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
+    return PIECE_SRC[key];
+  }
+  function pieceImg(type, color) {
+    const img = document.createElement('img');
+    img.className = 'piece-img';
+    img.src = pieceSrc(type, color);
+    img.alt = Engine.PIECE_NAMES[type] || '';
+    img.draggable = false;
+    return img;
+  }
   // Ilustraciones de las cartas especiales (carpeta cards/). Para cambiarlas, sustituye los archivos.
   const CARD_ART = {
     bloqueo: 'cards/bloqueo.svg',
@@ -118,10 +144,14 @@
       img.alt = '';
       el.appendChild(img);
     }
-    const name = document.createElement('div');
-    name.className = 'name';
-    name.textContent = Engine.cardName(card);
-    el.appendChild(name);
+    el.title = Engine.cardName(card);
+    // Las cartas de número solo llevan el número (el texto se salía en algunos móviles)
+    if (card.kind !== 'num') {
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = Engine.cardName(card);
+      el.appendChild(name);
+    }
     return el;
   }
 
@@ -199,7 +229,7 @@
         if (p) {
           const pe = document.createElement('span');
           pe.className = 'piece ' + p.color;
-          pe.textContent = GLYPHS[p.type];
+          pe.appendChild(pieceImg(p.type, p.color));
           sq.appendChild(pe);
         }
         boardEl.appendChild(sq);
@@ -312,7 +342,7 @@
       state.captured[col].forEach(function (type, idx) {
         const el = document.createElement(canPick ? 'button' : 'span');
         el.className = 'cap-piece ' + col + (canPick && reviveChoice === idx ? ' chosen' : '');
-        el.textContent = GLYPHS[type];
+        el.appendChild(pieceImg(type, col));
         el.title = Engine.PIECE_NAMES[type];
         if (canPick) {
           el.addEventListener('click', function () {
@@ -377,7 +407,7 @@
     if (caps.length) {
       const c = document.createElement('span');
       c.className = 'pb-caps ' + (color === 'w' ? 'b' : 'w');
-      c.textContent = caps.map(function (t) { return GLYPHS[t]; }).join('');
+      caps.forEach(function (t) { c.appendChild(pieceImg(t, color === 'w' ? 'b' : 'w')); });
       right.appendChild(c);
     }
     if (isArsenal() && p !== handOwner()) {
@@ -690,7 +720,10 @@
     modal.querySelector('p').textContent = title || '¿En qué pieza corona el peón?';
     (options || ['q', 'r', 'b', 'n']).forEach(function (t) {
       const b = document.createElement('button');
-      b.innerHTML = '<span class="piece ' + color + '">' + GLYPHS[t] + '</span>';
+      const ps = document.createElement('span');
+      ps.className = 'piece ' + color;
+      ps.appendChild(pieceImg(t, color));
+      b.appendChild(ps);
       b.title = Engine.PIECE_NAMES[t];
       b.addEventListener('click', function () {
         modal.classList.add('hidden');

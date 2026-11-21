@@ -50,7 +50,7 @@
   function cardDescription(card, state) {
     switch (card.kind) {
       case 'num':
-        return 'Haces ' + cardName(card) + ' seguidos. ' +
+        return 'Haces ' + cardName(card) + (card.n === 1 ? '' : ' seguidos') + '. ' +
           (rulesOf(state).captureEndsTurn ? 'Si capturas, el turno termina.' : 'Si amenazas al rey rival, el turno termina.');
       case 'bloqueo': return 'Pierdes el turno.';
       case 'color': return 'Conviertes 1 pieza rival (no el rey).';

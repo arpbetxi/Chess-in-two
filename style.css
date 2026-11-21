@@ -1078,3 +1078,10 @@ main.game { gap: 32px; padding: 20px 32px; }
 }
 .account-box p.hint { font-size: 0.95rem; font-weight: 400; color: var(--muted); margin: 0 0 12px; }
 .account-box p.acc-error { font-size: 0.9rem; font-weight: 500; color: #ff8c8c; }
+
+/* Piezas como imágenes (ver pieceImg en ui.js) */
+.piece-img { width: 1.08em; height: 1.08em; display: block; pointer-events: none; user-select: none; }
+.piece, .cap-piece, .pb-caps { text-shadow: none; }
+.cap-piece .piece-img { width: 1em; height: 1em; }
+.pb-caps { display: inline-flex; align-items: center; letter-spacing: 0; }
+.pb-caps .piece-img { width: 1.1em; height: 1.1em; display: inline-block; margin-right: -3px; }
