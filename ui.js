@@ -38,7 +38,12 @@
   };
   let lastDrawCount = null; // para animar solo las cartas recién robadas
   let freshSync = false;    // el invitado acaba de conectarse y aún no ha recibido la partida
-  const REVEAL_MS = 2200;   // cuánto se ve la carta en grande
+  const REVEAL_MS = 5000;   // tiempo mínimo que se ve la carta en grande
+  const REVEAL_MS_MAX = 10000;
+  // Más tiempo cuanto más largo es el texto (unos 60 ms por letra)
+  function revealTime(desc) {
+    return Math.min(REVEAL_MS_MAX, Math.max(REVEAL_MS, 2500 + String(desc || '').length * 60));
+  }
   let revealTimer = null;
   let revealUntil = 0;      // el bot espera a que termine la animación
   const SAVE_KEY = 'ajedrezCartas.partidaOnline';
@@ -554,7 +559,7 @@
 
   // Muestra en grande cualquier elemento (una carta, la ruleta...)
   function showRevealEl(element, who, desc, ms) {
-    ms = ms || REVEAL_MS;
+    ms = ms || revealTime(desc);
     const box = $('cardReveal');
     const front = $('revealFront');
     front.innerHTML = '';
@@ -1301,7 +1306,7 @@
     img.src = 'cards/arsenal/ruleta-rueda.svg';
     img.alt = 'Ruleta';
     wrap.appendChild(img);
-    showRevealEl(wrap, '🎡 ' + playVerb(info.player) + ' la Ruleta', 'Girando…', 3800);
+    showRevealEl(wrap, '🎡 ' + playVerb(info.player) + ' la Ruleta', 'Girando…', 6500);
     const turns = 360 * 5 - (info.idx * 45 + 22.5);
     requestAnimationFrame(function () {
       requestAnimationFrame(function () { img.style.transform = 'rotate(' + turns + 'deg)'; });
