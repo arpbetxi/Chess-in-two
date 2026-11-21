@@ -9,13 +9,14 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#1e2126">
   <!-- ?v=... obliga al navegador a descargar la versión nueva tras cada cambio -->
-  <link rel="stylesheet" href="style.css?v=20261120l">
+  <link rel="stylesheet" href="style.css?v=20261121b">
 </head>
 <body>
   <header>
     <div class="brand"><h1>In 2 Chess</h1><span id="modeChip" class="mode-chip hidden"></span></div>
     <div class="header-buttons">
       <span id="netStatus" class="net-status hidden"></span>
+      <button id="accountBtn" class="icon-btn account-btn hidden" title="Tu cuenta" aria-label="Tu cuenta"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="acc-dot" aria-hidden="true"></span></button>
       <button id="infoBtn" class="icon-btn" title="Reglas y cartas" aria-label="Reglas y cartas"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.5"/></svg></button>
       <button id="flipBtn" class="icon-btn" title="Girar la vista del tablero" aria-label="Girar la vista del tablero"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16"/><path d="M4 7l3-3 3 3"/><path d="M17 20V4"/><path d="M14 17l3 3 3-3"/></svg></button>
       <button id="newGameBtn" class="icon-btn" title="Nueva partida" aria-label="Nueva partida"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button>
@@ -230,6 +231,7 @@
           <span class="step-label">Paso 1</span>
           <label for="playerName" class="step-q">¿Cómo te llamas?</label>
           <input id="playerName" maxlength="20" placeholder="Tu nombre (para el marcador)" autocomplete="nickname">
+          <div id="accountLine" class="account-line hidden"></div>
         </div>
 
         <div class="lobby-step">
@@ -297,6 +299,57 @@
       </section>
     </div>
   </div>
+
+  <!-- Cuenta: iniciar sesión, estadísticas e historial -->
+  <div id="accountModal" class="modal account-modal hidden" role="dialog" aria-labelledby="accTitle">
+    <div class="modal-box account-box">
+      <div class="manual-head">
+        <h2 id="accTitle">Tu cuenta</h2>
+        <button id="accClose" class="close-btn" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div id="accLoading" class="acc-note hidden">Conectando…</div>
+      <div id="accUnavailable" class="acc-note hidden">Las cuentas no están disponibles ahora mismo. Puedes seguir jugando igual; inténtalo más tarde.</div>
+
+      <div id="accOut" class="hidden">
+        <p class="hint">Guarda tu historial de partidas y tus estadísticas, y consúltalos desde cualquier dispositivo.</p>
+        <button id="accGoogle" class="acc-google">
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+          Continuar con Google
+        </button>
+        <div class="acc-or"><span>o con tu correo</span></div>
+        <form id="accForm" class="acc-form" novalidate>
+          <label class="field-label hidden" for="accName" id="accNameLabel">Nombre</label>
+          <input id="accName" class="hidden" maxlength="20" autocomplete="nickname">
+          <label class="field-label" for="accEmail">Correo electrónico</label>
+          <input id="accEmail" type="email" autocomplete="email">
+          <label class="field-label" for="accPass">Contraseña</label>
+          <input id="accPass" type="password" autocomplete="current-password" minlength="6">
+          <p id="accError" class="acc-error hidden" role="alert"></p>
+          <button id="accSubmit" type="submit">Iniciar sesión</button>
+        </form>
+        <div class="acc-links">
+          <button id="accToggle" class="link-btn">¿No tienes cuenta? Regístrate</button>
+          <button id="accReset" class="link-btn">He olvidado mi contraseña</button>
+        </div>
+      </div>
+
+      <div id="accIn" class="hidden">
+        <div class="acc-hello">
+          <div>
+            <div class="acc-name" id="accUserName"></div>
+            <div class="acc-email" id="accUserEmail"></div>
+          </div>
+          <button id="accLogout" class="secondary">Cerrar sesión</button>
+        </div>
+        <div class="acc-stats" id="accStats"></div>
+        <div class="acc-modes" id="accModes"></div>
+        <h3 class="acc-h3">Últimas partidas</h3>
+        <ol class="acc-history" id="accHistory"></ol>
+      </div>
+    </div>
+  </div>
+  <div id="toast" class="toast hidden" role="status"></div>
 
   <!-- Buzón de sugerencias -->
   <button id="suggestBtn" class="suggest-fab" title="Enviar una sugerencia" aria-label="Sugerencias"><span aria-hidden="true">💡</span><span class="sf-text"> Sugerencias</span></button>
@@ -414,6 +467,7 @@
       <p id="overText"></p>
       <button id="overNewGame">Nueva partida</button>
       <button id="overClose" class="secondary">Ver tablero</button>
+      <button id="overHistory" class="secondary hidden">Ver mi historial</button>
     </div>
   </div>
 
@@ -424,13 +478,24 @@
       document.write('<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"><\/script>');
     }
   </script>
-  <script src="config.js?v=20261120l"></script>
-  <script src="engine.js?v=20261120l"></script>
-  <script src="net.js?v=20261120l"></script>
-  <script src="bot.js?v=20261120l"></script>
-  <script src="arsenal.js?v=20261120l"></script>
-  <script src="arsenal-engine.js?v=20261120l"></script>
-  <script src="ui.js?v=20261120l"></script>
-  <script src="modes.js?v=20261120l"></script>
+  <script src="config.js?v=20261121b"></script>
+  <script src="engine.js?v=20261121b"></script>
+  <script src="net.js?v=20261121b"></script>
+  <script src="bot.js?v=20261121b"></script>
+  <script src="arsenal.js?v=20261121b"></script>
+  <script src="arsenal-engine.js?v=20261121b"></script>
+  <script src="firebase-config.js?v=20261121b"></script>
+  <script>
+    // Las cuentas solo se cargan si hay configuración de Firebase
+    if (window.FIREBASE_CONFIG) {
+      var fb = document.createElement('script');
+      fb.type = 'module';
+      fb.src = 'firebase-backend.js?v=20261121b';
+      document.head.appendChild(fb);
+    }
+  </script>
+  <script src="ui.js?v=20261121b"></script>
+  <script src="modes.js?v=20261121b"></script>
+  <script src="cuentas.js?v=20261121b"></script>
 </body>
 </html>

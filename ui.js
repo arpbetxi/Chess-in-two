@@ -1342,6 +1342,28 @@
     try { localStorage.setItem(scoreKey(), JSON.stringify(score)); } catch (e) { /* sin guardado */ }
   }
 
+  // Resumen de la partida para el historial de la cuenta
+  function gameSummary() {
+    const local = mode === 'local';
+    const me = local ? null : myPlayer;
+    const other = me === 1 ? 2 : 1;
+    const r = state.result;
+    let result;
+    if (local) result = 'local';
+    else if (r.type === 'win') result = r.player === me ? 'win' : 'loss';
+    else result = 'draw';
+    return {
+      id: String(state.gameId),
+      mode: isArsenal() ? 'arsenal' : 'destino',
+      vs: mode,
+      opponent: local ? Engine.playerName(state, 1) + ' vs ' + Engine.playerName(state, 2) : Engine.playerName(state, other),
+      color: local ? null : state.playerColor[me],
+      result: result,
+      winner: r.type === 'win' ? Engine.playerName(state, r.player) : null,
+      reason: r.reason || '',
+    };
+  }
+
   // Suma el resultado una sola vez por partida (aunque se recargue o se reconecte)
   function recordResult() {
     if (!mode || !state.result || !state.gameId) return;
@@ -1356,6 +1378,7 @@
       score.ties = (score.ties || 0) + 1;
     }
     saveScore(score);
+    if (window.Cuentas) window.Cuentas.gameOver(gameSummary());
     counted.push(state.gameId);
     try { localStorage.setItem(COUNTED_KEY, JSON.stringify(counted.slice(-200))); } catch (e) { /* nada */ }
   }
