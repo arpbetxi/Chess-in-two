@@ -253,6 +253,7 @@
     $('arsenalPanel').classList.toggle('hidden', !isArsenal());
     if (isArsenal()) renderArsenalPanel(active);
     renderRobo();
+    renderRuletaElegir();
 
     // Mazo y carta
     $('deckCount').textContent = state.deck.length;
@@ -438,10 +439,11 @@
     let html = '';
     if (isArsenal()) {
       const P = state.current;
-      const choosing = ['robo', 'ruleta', 'duplicate', 'discard'].indexOf(state.phase) >= 0;
+      const choosing = ['robo', 'ruletaElegir', 'ruleta', 'duplicate', 'discard'].indexOf(state.phase) >= 0;
       const cardStep = choosing || ArsenalEngine.canUseCards(state);
       let cardSub;
       if (state.phase === 'robo') cardSub = 'Robo: eligiendo carta';
+      else if (state.phase === 'ruletaElegir') cardSub = 'Ruleta: eligiendo rueda';
       else if (state.phase === 'ruleta') cardSub = 'Ruleta: eligiendo piezas';
       else if (state.phase === 'duplicate' || state.phase === 'discard') cardSub = 'Decidiendo carta';
       else if (cardStep) cardSub = 'Opcional';
@@ -586,9 +588,10 @@
   }
 
   // Muestra en grande cualquier elemento (una carta, la ruleta...)
-  function showRevealEl(element, who, desc, ms) {
+  function showRevealEl(element, who, desc, ms, cls) {
     ms = ms || revealTime(desc);
     const box = $('cardReveal');
+    box.classList.toggle('wheel-mode', cls === 'wheel-mode');
     const front = $('revealFront');
     front.innerHTML = '';
     front.appendChild(element);
@@ -969,6 +972,7 @@
   function arsenalInstructions() {
     const P = state.current;
     if (state.phase === 'robo') return 'Robo: elige una de las cartas del rival.';
+    if (state.phase === 'ruletaElegir') return 'Ruleta: elige qué rueda girar tocándola.';
     if (state.phase === 'duplicate') return 'Has robado una carta repetida: decide en el panel qué hacer con ella.';
     if (state.phase === 'discard') return 'Tienes la mano llena: pulsa en el panel la carta que quieres descartar.';
     if (state.phase === 'ruleta') return 'Ruleta: elige en el tablero las piezas que se eliminan y confirma en el panel.';
@@ -1030,7 +1034,7 @@
     const pc = state.playCount || 0, rc = state.ruletaCount || 0, bc = state.roboCount || 0;
     if (lastRuletaCount !== null && rc > lastRuletaCount && state.lastRuleta) showWheel(state.lastRuleta);
     else if (lastRoboCount !== null && bc > lastRoboCount && state.lastRobo) showStolen(state.lastRobo);
-    else if (lastPlayCount !== null && pc > lastPlayCount && state.lastPlayed) showArsenalPlay(state.lastPlayed);
+    else if (lastPlayCount !== null && pc > lastPlayCount && state.lastPlayed && state.lastPlayed.card !== 'ruleta') showArsenalPlay(state.lastPlayed);
     lastPlayCount = pc;
     lastRuletaCount = rc;
     lastRoboCount = bc;
@@ -1340,15 +1344,29 @@
     updateRoboHover();
   }
 
-  function showWheel(info) {
+  const WHEEL_IMG = {
+    equilibrada: 'cards/arsenal/ruleta-rueda.svg',
+    arriesgada: 'cards/arsenal/ruleta-rueda-arriesgada.svg',
+  };
+
+  // Rueda con su flecha (en pequeño para elegir, en grande para girar)
+  function wheelEl(wheel) {
     const wrap = document.createElement('div');
     wrap.className = 'wheel-wrap';
     const img = document.createElement('img');
-    img.src = 'cards/arsenal/ruleta-rueda.svg';
-    img.alt = 'Ruleta';
+    img.src = WHEEL_IMG[wheel] || WHEEL_IMG.equilibrada;
+    img.alt = wheel === 'arriesgada' ? 'Ruleta arriesgada' : 'Ruleta equilibrada';
     wrap.appendChild(img);
-    showRevealEl(wrap, '🎡 ' + playVerb(info.player) + ' la Ruleta', 'Girando…', 6500);
-    const turns = 360 * 5 - (info.idx * 45 + 22.5);
+    return wrap;
+  }
+
+  function showWheel(info) {
+    const wheel = info.wheel || 'equilibrada';
+    const wrap = wheelEl(wheel);
+    const img = wrap.firstChild;
+    showRevealEl(wrap, '🎡 ' + playVerb(info.player) + ' la Ruleta ' + (wheel === 'arriesgada' ? 'arriesgada' : 'equilibrada'), 'Girando…', 7000, 'wheel-mode');
+    const seg = 360 / ((A.RULETAS[wheel] || A.RULETA).length);
+    const turns = 360 * 5 - (info.idx * seg + seg / 2);
     requestAnimationFrame(function () {
       requestAnimationFrame(function () { img.style.transform = 'rotate(' + turns + 'deg)'; });
     });
@@ -1356,7 +1374,78 @@
     setTimeout(function () {
       $('revealDesc').textContent = 'Ha salido ' + (v > 0 ? '+' + v : v) + ': se eliminan piezas ' +
         (v > 0 ? 'rivales' : 'propias') + ' por valor de hasta ' + Math.abs(v) + '.';
-    }, 1900);
+    }, 2500);
+  }
+
+  // ---------- Ruleta: elegir rueda ----------
+  let ruletaKey = '';
+  let ruletaChosen = null;   // rueda tocada (mientras se despide la otra)
+
+  const WHEEL_INFO = [
+    { id: 'equilibrada', name: 'Equilibrada', info: 'De −5 a +7 · media +0,5' },
+    { id: 'arriesgada', name: 'Arriesgada', info: 'Casi todo negativo y un +9 · media +0,5' },
+  ];
+
+  function chooseWheel(id) {
+    if (ruletaChosen || !isArsenal() || state.phase !== 'ruletaElegir') return;
+    ruletaChosen = id;
+    const opts = $('ruletaOptions');
+    opts.classList.add('picked');
+    Array.prototype.forEach.call(opts.children, function (el) {
+      el.classList.toggle('chosen', el.dataset.wheel === id);
+      el.classList.toggle('gone', el.dataset.wheel !== id);
+      el.disabled = true;
+    });
+    // La otra rueda desaparece, la elegida queda en el centro y empieza a girar
+    setTimeout(function () {
+      dispatch({ type: 'ruletaSpin', wheel: id });
+      setTimeout(function () {
+        if (state.phase === 'ruletaElegir') { ruletaChosen = null; ruletaKey = ''; render(); }
+      }, 2500);
+    }, 300);
+  }
+
+  function renderRuletaElegir() {
+    const box = $('ruletaOverlay');
+    if (!isArsenal() || state.phase !== 'ruletaElegir' || !state.ruletaElegir) {
+      box.classList.add('hidden');
+      ruletaKey = '';
+      ruletaChosen = null;
+      return;
+    }
+    const who = state.ruletaElegir.player;
+    const here = mode === 'local' || !mode || who === myPlayer;
+    const canPick = here && canAct() && !ruletaChosen;
+    const key = (state.playCount || 0) + '|' + here + '|' + canPick + '|' + ruletaChosen;
+    box.classList.remove('hidden');
+    if (key === ruletaKey) return;
+    ruletaKey = key;
+    const whoName = mode === 'bot' && who !== myPlayer ? 'El bot' : Engine.playerName(state, who);
+    $('ruletaTitle').textContent = here ? '🎡 Elige la ruleta que quieres girar' : '🎡 ' + whoName + ' está eligiendo ruleta…';
+    $('ruletaHint').textContent = here
+      ? 'Toca una: la otra desaparece y la elegida empieza a girar. Las dos valen +0,5 de media.'
+      : 'Las dos ruedas valen +0,5 de media; la arriesgada tiene más varianza.';
+    const row = $('ruletaOptions');
+    row.innerHTML = '';
+    row.classList.toggle('picked', !!ruletaChosen);
+    WHEEL_INFO.forEach(function (w) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ruleta-opt' + (ruletaChosen ? (ruletaChosen === w.id ? ' chosen' : ' gone') : '');
+      b.dataset.wheel = w.id;
+      b.disabled = !canPick;
+      b.appendChild(wheelEl(w.id));
+      const n = document.createElement('div');
+      n.className = 'ruleta-name';
+      n.textContent = w.name;
+      const i = document.createElement('div');
+      i.className = 'ruleta-info';
+      i.textContent = w.info;
+      b.appendChild(n);
+      b.appendChild(i);
+      b.addEventListener('click', function () { chooseWheel(w.id); });
+      row.appendChild(b);
+    });
   }
 
   // ---------- Nombres y marcador ----------

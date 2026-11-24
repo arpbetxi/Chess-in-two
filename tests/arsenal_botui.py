@@ -22,6 +22,8 @@ async def main():
                 await pg.evaluate("document.getElementById('cardReveal').click()"); await asyncio.sleep(0.4)
             if s['phase']=='duplicate': await pg.click('#aDecision button >> nth=0'); continue
             if s['phase']=='discard': await pg.click('#aHand .acard.discardable >> nth=0'); continue
+            if s['phase']=='ruletaElegir':
+                await pg.click('#ruletaOptions .ruleta-opt >> nth=0'); await asyncio.sleep(0.6); continue
             if s['phase']=='ruleta':
                 act = await pg.evaluate("ArsenalEngine.botAction(ajedrez.state,'normal')")
                 for q in act['squares']: await pg.click(SQ(*q))

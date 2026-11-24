@@ -737,19 +737,60 @@ button.cap-piece.chosen { border-color: #2f9e62; background: #2c5040; }
 .reveal-front .acard { width: 100%; height: 100%; border-radius: 22px; border-width: 6px; box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55); }
 .reveal-front .acard img { width: 150px; height: 150px; }
 .reveal-front .acard .name { font-size: 1.25rem; margin-top: 10px; }
-.wheel-wrap { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
-.wheel-wrap img { width: 230px; height: 230px; transform-origin: 50% 55%; transition: transform 1.8s cubic-bezier(0.15, 0.85, 0.25, 1); }
+.wheel-wrap {
+  width: var(--wheel, 230px);
+  height: var(--wheel, 230px);
+  position: relative;
+  flex-shrink: 0;
+}
+.wheel-wrap img { width: 100%; height: 100%; display: block; transform-origin: 50% 55%; transition: transform 2.4s cubic-bezier(0.15, 0.85, 0.25, 1); }
 .wheel-wrap::before {
   content: "";
   position: absolute;
-  top: 42px;
+  top: calc(var(--wheel, 230px) * 0.04);
   left: 50%;
   transform: translateX(-50%);
-  border-left: 16px solid transparent;
-  border-right: 16px solid transparent;
-  border-top: 28px solid #ffd54a;
+  border-left: calc(var(--wheel, 230px) * 0.07) solid transparent;
+  border-right: calc(var(--wheel, 230px) * 0.07) solid transparent;
+  border-top: calc(var(--wheel, 230px) * 0.12) solid #ffd54a;
   filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.6));
   z-index: 2;
+}
+/* La rueda girando, en grande pero sin ocupar toda la pantalla (también en móvil) */
+.card-reveal.wheel-mode { --wheel: min(86vw, 340px, 46vh); }
+.card-reveal.wheel-mode .reveal-flip { width: var(--wheel); height: var(--wheel); animation: reveal-soft-in 0.25s ease-out forwards; }
+.card-reveal.wheel-mode .reveal-back { display: none; }
+.card-reveal.wheel-mode .wheel-wrap { width: 100%; height: 100%; }
+
+/* Elegir rueda: las dos una al lado de la otra */
+.ruleta-options { display: flex; gap: 18px; justify-content: center; align-items: flex-start; --wheel: min(44vw, 230px); }
+.ruleta-opt {
+  background: transparent;
+  border: 0;
+  padding: 8px;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(var(--wheel) + 24px);
+  border-radius: 16px;
+  transition: transform 0.3s ease, opacity 0.3s ease, max-width 0.3s ease, padding 0.3s ease;
+}
+.ruleta-opt:disabled { cursor: default; }
+.ruleta-opt:not(:disabled):hover, .ruleta-opt:not(:disabled):focus-visible { transform: scale(1.05); background: rgba(255, 255, 255, 0.08); }
+.ruleta-name { font-weight: 700; font-size: 1.05rem; }
+.ruleta-info { font-size: 0.8rem; line-height: 1.3; color: #cfd5de; text-align: center; }
+.ruleta-options.picked { gap: 0; transition: gap 0.3s ease; }
+.ruleta-opt.gone { opacity: 0; transform: scale(0.6); max-width: 0; padding-left: 0; padding-right: 0; overflow: hidden; pointer-events: none; }
+.ruleta-opt.chosen { transform: scale(1.12); }
+.ruleta-opt.chosen .ruleta-name, .ruleta-opt.chosen .ruleta-info { opacity: 0; transition: opacity 0.2s; }
+@media (max-width: 700px) {
+  .ruleta-options { gap: 8px; }
+  .ruleta-opt { padding: 2px; }
+  .ruleta-info { font-size: 0.72rem; }
 }
 
 /* ---------- Modo Arsenal: Robo ---------- */

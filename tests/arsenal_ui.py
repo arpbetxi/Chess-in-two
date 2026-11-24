@@ -44,7 +44,9 @@ async def main():
         await resolve()
         await pg.evaluate("(()=>{const s=ajedrez.state; s.hands[s.current]=['ruleta']; ajedrez.render();})()")
         await pg.click("#aHand .acard >> nth=0"); print("why", await pg.inner_text('#aSelected'), await pg.evaluate("JSON.stringify([ajedrez.state.hands, ajedrez.state.current])")); print('BTN', await pg.inner_html('#aSelected .a-btns'), await pg.evaluate("JSON.stringify([ajedrez.state.phase,ajedrez.state.current,ajedrez.state.cardUsed,ajedrez.state.movesThisTurn])")); await pg.click('#aSelected button:has-text("Usar")', timeout=4000); await asyncio.sleep(1.2)
-        await pg.screenshot(path=SHOTS + '/a4_wheel.png'); await asyncio.sleep(2.2)
+        await asyncio.sleep(0.5); await pg.screenshot(path=SHOTS + '/a4_elegir_rueda.png'); print('fase tras usar Ruleta', await pg.evaluate("ajedrez.state.phase"), 'ruedas visibles', await pg.evaluate("document.querySelectorAll('#ruletaOptions .ruleta-opt').length"))
+        await pg.click('#ruletaOptions .ruleta-opt[data-wheel="arriesgada"]'); await asyncio.sleep(0.9)
+        await pg.screenshot(path=SHOTS + '/a4_wheel.png'); await asyncio.sleep(2.4)
         s = await st(); print('after ruleta phase', s['phase'], 'last', s.get('lastRuleta'))
         await pg.evaluate("document.getElementById('cardReveal').click()"); await asyncio.sleep(0.5)
         if s['phase']=='ruleta':

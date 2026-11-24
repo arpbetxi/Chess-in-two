@@ -20,7 +20,7 @@ function randomAction(s){
   const P=s.current;
   if(s.phase==='duplicate') return {type:'duplicate', choice: Math.random()<0.5?'combine':'discard'};
   if(s.phase==='discard') return {type:'discard', index: Math.floor(Math.random()*s.hands[P].length)};
-  if(s.phase==='ruleta'||s.phase==='robo'){ return A.botAction(s,'normal'); }
+  if(s.phase==='ruleta'||s.phase==='ruletaElegir'||s.phase==='robo'){ return A.botAction(s,'normal'); }
   if(s.movesThisTurn===0 && s.points[P]>=5 && Math.random()<0.5){
     for(const q of A.ownPieces(s)){ const t=s.board[q[0]][q[1]].type; const to={p:'n',n:'r',b:'r',r:'q'}[t]; if(to) return {type:'ascend', r:q[0], c:q[1], to}; }
   }
@@ -114,7 +114,12 @@ assert(A.apply(s,{type:'play',card:'apuesta'},1)); assert.strictEqual(s.phase,'d
 assert(A.apply(s,{type:'duplicate',choice:'combine'},1)); console.log('after combine hand', s.hands[1], 'phase', s.phase, 'current', s.current);
 // Ruleta
 s=empty(); put(s,'e1','k','w'); put(s,'e8','k','b'); put(s,'a7','p','b'); put(s,'b7','n','b'); put(s,'a2','p','w'); s.hands[1]=['ruleta'];
-A.apply(s,{type:'play',card:'ruleta'},1); console.log('ruleta value', s.ruleta && s.ruleta.value, 'phase', s.phase);
+A.apply(s,{type:'play',card:'ruleta'},1); assert.strictEqual(s.phase,'ruletaElegir'); assert.strictEqual(s.ruleta,null,'no gira sola');
+assert(!A.apply(s,{type:'ruletaSpin',wheel:'constructor'},1)); assert(!A.apply(s,{type:'move',from:rc('a2'),to:rc('a3')},1),'no se puede mover antes de girar');
+assert(A.apply(s,{type:'ruletaSpin',wheel:'arriesgada'},1)); assert(['ruleta','turn'].indexOf(s.phase)>=0); assert.strictEqual(s.lastRuleta.wheel,'arriesgada');
+assert(A.RULETAS.arriesgada.filter(function(v){return v>0;}).length===1 && A.RULETAS.arriesgada.indexOf(9)>=0,'solo un positivo: +9');
+['equilibrada','arriesgada'].forEach(function(w){ const R=A.RULETAS[w]; assert.strictEqual(R.reduce(function(a,b){return a+b;},0)/R.length,0.5,'media +0,5 en '+w); });
+console.log('ruleta value', s.ruleta && s.ruleta.value, 'phase', s.phase);
 if(s.phase==='ruleta'){ assert(A.apply(s,A.botAction(s,'normal'),1)); } assert.strictEqual(s.current,1,'move after ruleta'); assert.strictEqual(s.phase,'turn');
 // Apuesta sí quita el movimiento
 s=empty(); put(s,'e1','k','w'); put(s,'e8','k','b'); s.hands[1]=['apuesta']; assert(A.apply(s,{type:'play',card:'apuesta'},1)); if(s.phase==='turn') assert.strictEqual(s.current,2,'apuesta ends turn');

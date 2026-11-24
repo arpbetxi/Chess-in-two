@@ -12,6 +12,7 @@
  *   { type: 'ascend', r, c, to }             ascender una pieza con 5 puntos
  *   { type: 'duplicate', choice }            carta repetida: 'discard' | 'combine'
  *   { type: 'discard', index }               mano llena: descartar una carta
+ *   { type: 'ruletaSpin', wheel }           Ruleta: rueda elegida ('equilibrada' | 'arriesgada'); la hace girar
  *   { type: 'ruletaPick', squares }          piezas eliminadas por la Ruleta
  *   { type: 'roboPick', index }              Robo: carta del rival elegida (boca abajo)
  */
@@ -26,7 +27,12 @@
   const PIECE_NAMES = { p: 'peón', n: 'caballo', b: 'alfil', r: 'torre', q: 'dama', k: 'rey' };
   const COLOR_NAMES = { w: 'blancas', b: 'negras' };
   // Mismo orden que el dibujo de la ruleta (cards/arsenal/ruleta.svg), en el sentido de las agujas del reloj
-  const RULETA = [-5, 1, -3, 3, -3, 5, -1, 7];
+  // Dos ruedas (las dos con valor esperado +0,5). La arriesgada solo tiene un positivo: (−3 + 9 − 3 − 1) / 4
+  const RULETAS = {
+    equilibrada: [-5, 1, -3, 3, -3, 5, -1, 7],
+    arriesgada: [-3, 9, -3, -1],
+  };
+  const RULETA = RULETAS.equilibrada;
   const KNIGHT = [[1, 2], [2, 1], [-1, 2], [-2, 1], [1, -2], [2, -1], [-1, -2], [-2, -1]];
 
   const CARD = {};
@@ -82,7 +88,7 @@
       pending: { 1: 0, 2: 0 },          // cartas por piezas perdidas, se roban al empezar el turno
       queue: [],                        // cartas por recibir este turno ('draw' o un id)
       incoming: null,                   // carta repetida pendiente de decisión
-      phase: 'turn',                    // turn | duplicate | discard | ruleta | robo | over
+      phase: 'turn',                    // turn | duplicate | discard | ruletaElegir | ruleta | robo | over
       cardUsed: false,
       buff: null,                       // potenciadora activa: salto | fantasma | doblepaso
       movesLeft: 1,
@@ -93,7 +99,8 @@
       possessed: null,                  // { id, player }: pieza rival que `player` controla este turno (Posesión)
       traps: [],                        // { r, c, owner }: ocultas para todos
       bloodlust: null,                  // jugador obligado a capturar en su turno
-      ruleta: null,                     // { value, idx, player }
+      ruletaElegir: null,               // { player }: elige qué rueda girar
+      ruleta: null,                     // { value, idx, player, wheel }
       ruletaCount: 0,
       lastPlayed: null,
       playCount: 0,
@@ -619,23 +626,12 @@
         state.robo = { player: P };
         state.phase = 'robo';
         return true;
-      case 'ruleta': {
-        const idx = Math.floor(Math.random() * RULETA.length);
-        state.ruleta = { value: RULETA[idx], idx: idx, player: P };
-        state.lastRuleta = { value: RULETA[idx], idx: idx, player: P };
-        state.ruletaCount++;
-        const v = RULETA[idx];
-        log(state, '🎡 Ruleta: sale ' + (v > 0 ? '+' + v : v) + '. ' +
-          (v > 0 ? name(state, P) + ' elimina piezas rivales.' : name(state, P) + ' tiene que eliminar piezas propias.'));
-        if (ruletaCheck(state, []).ok) { // no cabe ninguna pieza
-          state.ruleta = null;
-          log(state, 'No hay ninguna pieza que quepa en ese número.');
-          checkStuck(state);
-        } else {
-          state.phase = 'ruleta';
-        }
+      case 'ruleta':
+        // El jugador elige qué rueda gira (equilibrada o arriesgada) y la hace girar con 'ruletaSpin'
+        state.ruletaElegir = { player: P };
+        state.phase = 'ruletaElegir';
+        log(state, '🎡 ' + name(state, P) + ' usa la Ruleta y elige qué rueda girar.');
         return true;
-      }
       case 'trampa':
         state.traps.push({ r: t.sq[0], c: t.sq[1], owner: P });
         log(state, '🪤 ' + name(state, P) + ' coloca una trampa oculta en algún lugar del tablero.');
@@ -747,6 +743,30 @@
         log(state, '🦝 ' + name(state, P) + ' le roba una carta a ' + name(state, other(P)) + '.');
         state.queue.push(stolen);
         processQueue(state);
+        return true;
+      }
+
+      case 'ruletaSpin': {
+        if (state.phase !== 'ruletaElegir') return false;
+        const wheel = Object.prototype.hasOwnProperty.call(RULETAS, action.wheel) ? action.wheel : null;
+        if (!wheel) return false;
+        const W = RULETAS[wheel];
+        const idx = Math.floor(Math.random() * W.length);
+        const v = W[idx];
+        state.ruletaElegir = null;
+        state.ruleta = { value: v, idx: idx, player: P, wheel: wheel };
+        state.lastRuleta = { value: v, idx: idx, player: P, wheel: wheel };
+        state.ruletaCount++;
+        log(state, '🎡 Ruleta ' + (wheel === 'arriesgada' ? 'arriesgada' : 'equilibrada') + ': sale ' + (v > 0 ? '+' + v : v) + '. ' +
+          (v > 0 ? name(state, P) + ' elimina piezas rivales.' : name(state, P) + ' tiene que eliminar piezas propias.'));
+        if (ruletaCheck(state, []).ok) { // no cabe ninguna pieza
+          state.ruleta = null;
+          state.phase = 'turn';
+          log(state, 'No hay ninguna pieza que quepa en ese número.');
+          checkStuck(state);
+        } else {
+          state.phase = 'ruleta';
+        }
         return true;
       }
 
@@ -978,6 +998,9 @@
       }
       case 'robo':
         return { type: 'roboPick', index: Math.floor(Math.random() * state.hands[other(P)].length) };
+      case 'ruletaElegir':
+        // Si va perdiendo material, arriesga; si no, la rueda equilibrada (misma media, menos varianza)
+        return { type: 'ruletaSpin', wheel: materialDiff(state, P) <= -3 ? 'arriesgada' : 'equilibrada' };
       case 'ruleta': {
         const ch = ruletaChoice(state, P);
         return { type: 'ruletaPick', squares: ch ? ch.squares : [] };
@@ -1039,6 +1062,7 @@
   const ArsenalEngine = {
     VALUES: VALUES,
     RULETA: RULETA,
+    RULETAS: RULETAS,
     CARD: CARD,
     HAND_LIMIT: HAND_LIMIT,
     ASC_POINTS: ASC_POINTS,
