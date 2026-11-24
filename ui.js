@@ -64,12 +64,9 @@
   };
   let lastDrawCount = null; // para animar solo las cartas recién robadas
   let freshSync = false;    // el invitado acaba de conectarse y aún no ha recibido la partida
-  const REVEAL_MS = 5000;   // tiempo mínimo que se ve la carta en grande
-  const REVEAL_MS_MAX = 10000;
-  // Más tiempo cuanto más largo es el texto (unos 60 ms por letra)
-  function revealTime(desc) {
-    return Math.min(REVEAL_MS_MAX, Math.max(REVEAL_MS, 2500 + String(desc || '').length * 60));
-  }
+  const REVEAL_MS = 5000;   // tiempo máximo que se ve la carta en grande (igual para todas)
+  function revealTime() { return REVEAL_MS; }
+  let revealDraw = null;    // nº de robo de la carta que se está mostrando (Destino), para sincronizar el cierre
   let revealTimer = null;
   let revealUntil = 0;      // el bot espera a que termine la animación
   const SAVE_KEY = 'ajedrezCartas.partidaOnline';
@@ -583,6 +580,7 @@
   }
 
   function showReveal(card, player) {
+    revealDraw = state.drawCount || 0;
     showRevealEl(cardElement(card, false), whoDrew(player),
       card.kind === 'num' ? MANUAL_TEXT.num(card.n, state.rules) : MANUAL_TEXT[card.kind]);
   }
@@ -603,12 +601,17 @@
     box.classList.remove('hidden');
     clearTimeout(revealTimer);
     revealUntil = Date.now() + ms + 350;
-    revealTimer = setTimeout(hideReveal, ms);
+    revealTimer = setTimeout(function () { hideReveal(true); }, ms); // al acabar el tiempo no hace falta avisar al rival
   }
 
-  function hideReveal() {
+  // fromRemote: el cierre lo ha pedido el rival (no hay que devolvérselo)
+  function hideReveal(fromRemote) {
     const box = $('cardReveal');
     if (box.classList.contains('hidden') || box.classList.contains('leaving')) return;
+    if (fromRemote !== true && online() && !isArsenal() && revealDraw !== null) {
+      Net.send({ t: 'revealClose', draw: revealDraw }); // si lo cierras antes de tiempo, se cierra también al rival
+    }
+    revealDraw = null;
     clearTimeout(revealTimer);
     box.classList.add('leaving');
     revealUntil = Date.now() + 350;
@@ -619,7 +622,7 @@
     }, 350);
   }
 
-  $('cardReveal').addEventListener('click', hideReveal);
+  $('cardReveal').addEventListener('click', function () { hideReveal(); });
   document.addEventListener('keydown', function (e) {
     if ((e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') && !$('cardReveal').classList.contains('hidden')) hideReveal();
   });
@@ -837,6 +840,11 @@
       if (msg.t === 'hover') {
         roboHover = typeof msg.i === 'number' ? msg.i : null;
         updateRoboHover();
+        return;
+      }
+      if (msg.t === 'revealClose') {
+        // Solo se cierra si es la misma carta que se está mostrando aquí
+        if (!isArsenal() && revealDraw !== null && msg.draw === revealDraw) hideReveal(true);
         return;
       }
       if (mode === 'host' && msg.t === 'hello') {
