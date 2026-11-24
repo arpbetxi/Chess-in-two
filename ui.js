@@ -1364,7 +1364,7 @@
     const wheel = info.wheel || 'equilibrada';
     const wrap = wheelEl(wheel);
     const img = wrap.firstChild;
-    showRevealEl(wrap, '🎡 ' + playVerb(info.player) + ' la Ruleta ' + (wheel === 'arriesgada' ? 'arriesgada' : 'equilibrada'), 'Girando…', 7000, 'wheel-mode');
+    showRevealEl(wrap, '🎡 ' + playVerb(info.player) + ' la Ruleta ' + (wheel === 'arriesgada' ? 'arriesgada' : 'equilibrada'), 'Girando…', 8000, 'wheel-mode');
     const seg = 360 / ((A.RULETAS[wheel] || A.RULETA).length);
     const turns = 360 * 5 - (info.idx * seg + seg / 2);
     requestAnimationFrame(function () {
@@ -1374,7 +1374,7 @@
     setTimeout(function () {
       $('revealDesc').textContent = 'Ha salido ' + (v > 0 ? '+' + v : v) + ': se eliminan piezas ' +
         (v > 0 ? 'rivales' : 'propias') + ' por valor de hasta ' + Math.abs(v) + '.';
-    }, 2500);
+    }, 3500);
   }
 
   // ---------- Ruleta: elegir rueda ----------
