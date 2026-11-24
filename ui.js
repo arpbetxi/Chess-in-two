@@ -1383,7 +1383,7 @@
 
   const WHEEL_INFO = [
     { id: 'equilibrada', name: 'Equilibrada', info: 'De −5 a +7 · media +0,5' },
-    { id: 'arriesgada', name: 'Arriesgada', info: 'Casi todo negativo y un +9 · media +0,5' },
+    { id: 'arriesgada', name: 'Arriesgada', info: 'Casi todo negativo, con dos +9 · media +0,5' },
   ];
 
   function chooseWheel(id) {

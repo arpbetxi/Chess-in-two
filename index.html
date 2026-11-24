@@ -11,7 +11,7 @@
   <!-- La web ya es oscura: evita que el "modo oscuro" del navegador cambie los colores (piezas negras que salían blancas) -->
   <meta name="color-scheme" content="dark">
   <!-- ?v=... obliga al navegador a descargar la versión nueva tras cada cambio -->
-  <link rel="stylesheet" href="style.css?v=20261124f">
+  <link rel="stylesheet" href="style.css?v=20261124h">
 </head>
 <body>
   <header>
@@ -487,25 +487,25 @@
       document.write('<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"><\/script>');
     }
   </script>
-  <script src="config.js?v=20261124f"></script>
-  <script src="engine.js?v=20261124f"></script>
-  <script src="net.js?v=20261124f"></script>
-  <script src="bot.js?v=20261124f"></script>
-  <script src="arsenal.js?v=20261124f"></script>
-  <script src="arsenal-engine.js?v=20261124f"></script>
-  <script src="firebase-config.js?v=20261124f"></script>
+  <script src="config.js?v=20261124h"></script>
+  <script src="engine.js?v=20261124h"></script>
+  <script src="net.js?v=20261124h"></script>
+  <script src="bot.js?v=20261124h"></script>
+  <script src="arsenal.js?v=20261124h"></script>
+  <script src="arsenal-engine.js?v=20261124h"></script>
+  <script src="firebase-config.js?v=20261124h"></script>
   <script>
     // Las cuentas solo se cargan si hay configuración de Firebase
     // ?sincuentas en la dirección las desactiva (lo usan las pruebas)
     if (window.FIREBASE_CONFIG && !/[?&]sincuentas/.test(location.search)) {
       var fb = document.createElement('script');
       fb.type = 'module';
-      fb.src = 'firebase-backend.js?v=20261124f';
+      fb.src = 'firebase-backend.js?v=20261124h';
       document.head.appendChild(fb);
     }
   </script>
-  <script src="ui.js?v=20261124f"></script>
-  <script src="modes.js?v=20261124f"></script>
-  <script src="cuentas.js?v=20261124f"></script>
+  <script src="ui.js?v=20261124h"></script>
+  <script src="modes.js?v=20261124h"></script>
+  <script src="cuentas.js?v=20261124h"></script>
 </body>
 </html>

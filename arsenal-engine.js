@@ -27,10 +27,10 @@
   const PIECE_NAMES = { p: 'peón', n: 'caballo', b: 'alfil', r: 'torre', q: 'dama', k: 'rey' };
   const COLOR_NAMES = { w: 'blancas', b: 'negras' };
   // Mismo orden que el dibujo de la ruleta (cards/arsenal/ruleta.svg), en el sentido de las agujas del reloj
-  // Dos ruedas (las dos con valor esperado +0,5). La arriesgada solo tiene un positivo: (−3 + 9 − 3 − 1) / 4
+  // Dos ruedas (las dos con valor esperado +0,5). La arriesgada es (−3, +9, −3, −1) repetida dos veces: la media es (−3 + 9 − 3 − 1) / 4
   const RULETAS = {
     equilibrada: [-5, 1, -3, 3, -3, 5, -1, 7],
-    arriesgada: [-3, 9, -3, -1],
+    arriesgada: [-3, 9, -3, -1, -3, 9, -3, -1],
   };
   const RULETA = RULETAS.equilibrada;
   const KNIGHT = [[1, 2], [2, 1], [-1, 2], [-2, 1], [1, -2], [2, -1], [-1, -2], [-2, -1]];

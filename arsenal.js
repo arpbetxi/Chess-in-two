@@ -35,7 +35,7 @@
     },
     {
       id: 'ruleta', name: 'Ruleta', rarity: 'comun', type: 'accion', copies: 5,
-      text: 'Eliges entre dos ruedas y la giras tocándola: la equilibrada (−5, −3, −3, −1, +1, +3, +5, +7) o la arriesgada (−3, −3, −1 y un +9). Las dos valen +0,5 de media. Si sale positivo, eliminas piezas rivales cuyo valor sume como máximo ese número; si sale negativo, piezas tuyas. Eliges tú cuáles y el rey nunca cuenta.',
+      text: 'Eliges entre dos ruedas y la giras tocándola: la equilibrada (−5, −3, −3, −1, +1, +3, +5, +7) o la arriesgada (−3, −3, −1 y +9, repetidos dos veces). Las dos valen +0,5 de media. Si sale positivo, eliminas piezas rivales cuyo valor sume como máximo ese número; si sale negativo, piezas tuyas. Eliges tú cuáles y el rey nunca cuenta.',
     },
     {
       id: 'trampa', name: 'Trampa', rarity: 'comun', type: 'accion', copies: 5,
@@ -73,7 +73,7 @@
     startingHand: 2,
     ascensionPoints: 5,
     ruleta: [-5, -3, -3, -1, 1, 3, 5, 7],
-    ruletaArriesgada: [-3, -3, -1, 9],
+    ruletaArriesgada: [-3, 9, -3, -1, -3, 9, -3, -1],
     ascensionPath: 'Peón → caballo o alfil → torre → dama',
   };
 

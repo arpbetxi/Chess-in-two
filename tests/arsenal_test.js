@@ -117,7 +117,7 @@ s=empty(); put(s,'e1','k','w'); put(s,'e8','k','b'); put(s,'a7','p','b'); put(s,
 A.apply(s,{type:'play',card:'ruleta'},1); assert.strictEqual(s.phase,'ruletaElegir'); assert.strictEqual(s.ruleta,null,'no gira sola');
 assert(!A.apply(s,{type:'ruletaSpin',wheel:'constructor'},1)); assert(!A.apply(s,{type:'move',from:rc('a2'),to:rc('a3')},1),'no se puede mover antes de girar');
 assert(A.apply(s,{type:'ruletaSpin',wheel:'arriesgada'},1)); assert(['ruleta','turn'].indexOf(s.phase)>=0); assert.strictEqual(s.lastRuleta.wheel,'arriesgada');
-assert(A.RULETAS.arriesgada.filter(function(v){return v>0;}).length===1 && A.RULETAS.arriesgada.indexOf(9)>=0,'solo un positivo: +9');
+assert(A.RULETAS.arriesgada.length===8 && A.RULETAS.arriesgada.filter(function(v){return v>0;}).every(function(v){return v===9;}) && A.RULETAS.arriesgada.filter(function(v){return v===9;}).length===2,'dos casillas +9 de ocho (25 %), el resto negativas');
 ['equilibrada','arriesgada'].forEach(function(w){ const R=A.RULETAS[w]; assert.strictEqual(R.reduce(function(a,b){return a+b;},0)/R.length,0.5,'media +0,5 en '+w); });
 console.log('ruleta value', s.ruleta && s.ruleta.value, 'phase', s.phase);
 if(s.phase==='ruleta'){ assert(A.apply(s,A.botAction(s,'normal'),1)); } assert.strictEqual(s.current,1,'move after ruleta'); assert.strictEqual(s.phase,'turn');
