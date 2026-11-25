@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <title>Resurrección: una pieza capturada vuelve a tu primera fila</title>
+  <rect x="15" y="17" width="70" height="70" rx="3" fill="#1b1b1b"/><rect x="17" y="19" width="22" height="22" fill="#e8e0f5"/><rect x="39" y="19" width="22" height="22" fill="#a995d1"/><rect x="61" y="19" width="22" height="22" fill="#e8e0f5"/><rect x="17" y="41" width="22" height="22" fill="#a995d1"/><rect x="39" y="41" width="22" height="22" fill="#e8e0f5"/><rect x="61" y="41" width="22" height="22" fill="#a995d1"/><rect x="17" y="63" width="22" height="22" fill="#e8e0f5"/><rect x="39" y="63" width="22" height="22" fill="#a995d1"/><rect x="61" y="63" width="22" height="22" fill="#e8e0f5"/><g><path d="M38 72 H62 V66 H58 V52 H62 V42 H57 V46 H53 V42 H47 V46 H43 V42 H38 V52 H42 V66 H38 Z" fill="#f4f0e6" stroke="#1b1b1b" stroke-width="2.6" stroke-linejoin="round"/>
+<path d="M30 78 Q50 62 70 78" fill="none" stroke="#ffd54a" stroke-width="3.2" stroke-linecap="round"/>
+<g fill="#ffd54a" stroke="#1b1b1b" stroke-width="1.2"><path d="M28 34 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z"/><path d="M72 30 l1.6 4 4 1.6 -4 1.6 -1.6 4 -1.6 -4 -4 -1.6 4 -1.6z"/><path d="M70 52 l1.2 3 3 1.2 -3 1.2 -1.2 3 -1.2 -3 -3 -1.2 3 -1.2z"/></g></g>
+</svg>

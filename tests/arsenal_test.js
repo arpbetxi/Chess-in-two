@@ -13,6 +13,8 @@ function randomTarget(s, id){
     case 'congelar': return {sq: rnd(sqs())};
     case 'enroque': { const own=A.ownPieces(s); for(let i=0;i<30;i++){ const a=rnd(own), bb=rnd(own); if(a!==bb) return {a, b:bb}; } return {}; }
     case 'posesion': return {sq: rnd(A.possessionPieces(s))};
+    case 'pedrolo': { const e=sqs().filter(([r,c])=>!b[r][c]); return {sq: rnd(e)}; }
+    case 'resurreccion': { const ts=A.revivableTypes(s), fr=A.freeBackSquares(s); return {sq: rnd(fr), type: rnd(ts)}; }
   }
   return null;
 }
@@ -31,7 +33,7 @@ function randomAction(s){
   }
   const ms=A.legalMoves(s); if(!ms.length) return null; const m=rnd(ms); return {type:'move', from:m.from, to:m.to, promo:'q'};
 }
-function count(s){ let n=0; for(const row of s.board) for(const p of row) if(p) n++; return n + s.captured.w.length + s.captured.b.length; }
+function count(s){ let n=0; for(const row of s.board) for(const p of row) if(p && p.type!=='x') n++; return n + s.captured.w.length + s.captured.b.length; }
 function play(p1,p2,maxSteps=3000){
   const s=A.newGame(); let steps=0; const used={};
   while(s.phase!=='over' && steps<maxSteps){
@@ -49,7 +51,7 @@ function play(p1,p2,maxSteps=3000){
 }
 // specific card checks
 let s=A.newGame(); assert.strictEqual(s.hands[1].length,2); assert.strictEqual(s.hands[2].length,2); assert(s.escudo[1]&&s.escudo[2]);
-assert.strictEqual(s.deck.length,36);
+assert.strictEqual(s.deck.length,Arsenal.CARDS.reduce((a,c)=>a+c.copies,0)-2*Arsenal.RULES.startingHand);
 assert(!A.cardAllowed(s,'escudo').ok,'no cards first turn');
 // Fantasma: rook through pawns
 function empty(){ const s=A.newGame(); s.board=s.board.map(r=>r.map(()=>null)); s.playerColor={1:'w',2:'b'}; s.current=1; s.turnCount={1:2,2:2}; s.hands={1:[],2:[]}; s.phase='turn'; s.cardUsed=false; s.movesLeft=1; s.movesThisTurn=0; s.queue=[]; return s; }
@@ -106,6 +108,28 @@ assert(!A.legalMoves(s).some(m=>(m.from[0]===rc('a1')[0]&&m.from[1]===rc('a1')[1
 assert(A.legalMoves(s).some(m=>m.from[0]===rc('e1')[0]&&m.from[1]===rc('e1')[1]),'el resto sí');
 assert(A.apply(s,{type:'move',from:rc('e1'),to:rc('e2')},1)); assert.strictEqual(s.locked,null,'se libera al acabar el turno');
 // Rarezas tras el reequilibrado
+// Pedrolo: muro que nadie atraviesa; solo se rompe inmolando una pieza (ni peón ni rey), sin robar carta
+s=empty(); put(s,'e1','k','w'); put(s,'a1','r','w'); put(s,'h2','p','w'); put(s,'e8','k','b'); s.hands[1]=['pedrolo'];
+s.traps.push({r:rc('a4')[0],c:rc('a4')[1],owner:2});
+assert(!A.apply(s,{type:'play',card:'pedrolo',target:{sq:rc('e1')}},1),'no sobre una pieza');
+assert(A.apply(s,{type:'play',card:'pedrolo',target:{sq:rc('a4')}},1)); assert.strictEqual(s.board[rc('a4')[0]][rc('a4')[1]].type,'x'); assert.strictEqual(s.traps.length,0,'entierra la trampa');
+let mv=A.legalMoves(s).filter(m=>m.from[0]===rc('a1')[0]&&m.from[1]===rc('a1')[1]).map(m=>m.to[0]+','+m.to[1]+(m.sacrifice?'s':''));
+assert(mv.indexOf(rc('a3').join(','))>=0 && mv.indexOf(rc('a4').join(',')+'s')>=0 && !mv.some(x=>x.indexOf(rc('a5').join(','))===0),'la torre llega hasta el pedrolo y no lo cruza: '+mv);
+assert(!A.legalMoves(s).some(m=>m.sacrifice&&s.board[m.from[0]][m.from[1]].type==='k'),'el rey no se inmola');
+s.pending[1]=0; assert(A.apply(s,{type:'move',from:rc('a1'),to:rc('a4')},1)); assert.strictEqual(s.board[rc('a4')[0]][rc('a4')[1]],null,'desaparece el pedrolo'); assert.strictEqual(s.board[rc('a1')[0]][rc('a1')[1]],null,'y la torre');
+assert.strictEqual(s.captured.w.filter(t=>t==='r').length,1); assert.strictEqual(s.pending[1],0,'sin robar carta'); assert.strictEqual(s.current,2);
+// Un peón no puede romper el pedrolo ni cruzarlo
+s=empty(); put(s,'e1','k','w'); put(s,'a2','p','w'); put(s,'b3','p','w'); put(s,'e8','k','b'); s.hands[1]=['pedrolo'];
+assert(A.apply(s,{type:'play',card:'pedrolo',target:{sq:rc('a3')}},1)); assert(!A.legalMoves(s).some(m=>m.from[0]===rc('a2')[0]&&m.from[1]===rc('a2')[1]),'peón bloqueado'); 
+s=empty(); put(s,'e1','k','w'); put(s,'c1','p','w'); put(s,'e8','k','b'); put(s,'d2','x','x'); assert(!A.legalMoves(s).some(m=>m.to[0]===rc('d2')[0]&&m.to[1]===rc('d2')[1]&&m.from[1]===rc('e1')[1]),'rey no pisa pedrolo');
+// Resurrección: vuelve un caballo/alfil/torre capturado a tu primera fila
+s=empty(); put(s,'e1','k','w'); put(s,'e8','k','b'); put(s,'d1','b','w'); s.captured.w=['p','q','n']; s.hands[1]=['resurreccion'];
+assert.deepStrictEqual(A.revivableTypes(s),['n']);
+assert(!A.apply(s,{type:'play',card:'resurreccion',target:{sq:rc('c1'),type:'q'}},1),'no la dama');
+assert(!A.apply(s,{type:'play',card:'resurreccion',target:{sq:rc('c3'),type:'n'}},1),'solo la primera fila');
+assert(!A.apply(s,{type:'play',card:'resurreccion',target:{sq:rc('d1'),type:'n'}},1),'casilla ocupada');
+assert(A.apply(s,{type:'play',card:'resurreccion',target:{sq:rc('c1'),type:'n'}},1)); assert.strictEqual(s.board[rc('c1')[0]][rc('c1')[1]].type,'n'); assert.deepStrictEqual(s.captured.w,['p','q']); assert.strictEqual(s.current,1,'después mueves');
+s=empty(); put(s,'e1','k','w'); put(s,'e8','k','b'); s.captured.b=['r']; s.hands[1]=['resurreccion']; assert(!A.cardAllowed(s,'resurreccion').ok,'sin piezas tuyas capturadas no se puede');
 // Ahogado tras usar carta = tablas
 s=empty(); put(s,'a1','k','w'); put(s,'a2','p','w'); put(s,'b2','p','w'); put(s,'b1','b','w'); put(s,'c2','p','w'); put(s,'a3','p','b'); put(s,'b3','p','b'); put(s,'c3','p','b'); put(s,'h8','k','b');
 for (const q of ['a3','b3','c3']) s.shields.push({id:s.board[rc(q)[0]][rc(q)[1]].id, owner:2});

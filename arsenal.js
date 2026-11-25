@@ -22,10 +22,6 @@
       text: 'Una pieza tuya no puede ser capturada ni congelada durante el próximo turno rival. Cada jugador empieza con una; no está en el mazo.',
     },
     {
-      id: 'salto', name: 'Salto de caballo', rarity: 'rara', type: 'potenciadora', copies: 5,
-      text: 'Este turno, una de tus piezas (no el rey) puede moverse además como un caballo.',
-    },
-    {
       id: 'enroque', name: 'Enroque', rarity: 'comun', type: 'accion', copies: 5,
       text: 'Dos piezas tuyas intercambian sus casillas. Ninguna de las dos puede moverse durante este turno.',
     },
@@ -42,8 +38,12 @@
       text: 'Colocas una trampa en una casilla vacía. Nadie la ve, ni siquiera tú: la primera pieza que la pise, sea de quien sea, queda eliminada. El rey es inmune.',
     },
     {
-      id: 'fantasma', name: 'Fantasma', rarity: 'epica', type: 'potenciadora', copies: 4,
-      text: 'Este turno, tus piezas pueden atravesar peones de cualquier color (pero no terminar encima de uno salvo para capturarlo).',
+      id: 'pedrolo', name: 'Pedrolo', rarity: 'comun', type: 'accion', copies: 5,
+      text: 'Colocas una piedra en una casilla vacía. Durante el resto de la partida nadie puede atravesarla ni pisarla (los caballos sí la saltan). Solo se rompe si una pieza (ni peón ni rey) se inmola contra ella: desaparecen las dos y su dueño no roba carta por esa pérdida.',
+    },
+    {
+      id: 'salto', name: 'Salto de caballo', rarity: 'rara', type: 'potenciadora', copies: 5,
+      text: 'Este turno, una de tus piezas (no el rey) puede moverse además como un caballo.',
     },
     {
       id: 'robo', name: 'Robo', rarity: 'rara', type: 'accion', copies: 4,
@@ -54,16 +54,24 @@
       text: 'Durante el próximo turno del rival, si alguna de sus piezas puede capturar, está obligado a capturar (elige con cuál). Tampoco puede usar una carta de acción para evitarlo.',
     },
     {
-      id: 'congelar', name: 'Congelar', rarity: 'epica', type: 'accion', copies: 1,
-      text: 'Eliges una zona de 3×3: ninguna pieza de esa zona puede moverse durante el próximo turno. El rey es inmune.',
-    },
-    {
       id: 'doblepaso', name: 'Doble paso', rarity: 'rara', type: 'potenciadora', copies: 2,
       text: 'Haces dos movimientos este turno. El segundo también puede capturar, pero nunca al rey.',
     },
     {
       id: 'posesion', name: 'Posesión demoníaca', rarity: 'rara', type: 'accion', copies: 1,
       text: 'Eliges una pieza rival (no el rey) y durante este turno la controlas tú: en tu movimiento puedes moverla como si fuera tuya, incluso capturando piezas de su propio bando (nunca al rey). Sigue siendo del rival.',
+    },
+    {
+      id: 'fantasma', name: 'Fantasma', rarity: 'epica', type: 'potenciadora', copies: 4,
+      text: 'Este turno, tus piezas pueden atravesar peones de cualquier color (pero no terminar encima de uno salvo para capturarlo).',
+    },
+    {
+      id: 'congelar', name: 'Congelar', rarity: 'epica', type: 'accion', copies: 1,
+      text: 'Eliges una zona de 3×3: ninguna pieza de esa zona puede moverse durante el próximo turno. El rey es inmune.',
+    },
+    {
+      id: 'resurreccion', name: 'Resurrección', rarity: 'epica', type: 'accion', copies: 1,
+      text: 'Eliges una de tus piezas capturadas (caballo, alfil o torre) y reaparece en una casilla libre de tu primera fila.',
     },
   ];
 

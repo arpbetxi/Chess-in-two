@@ -31,7 +31,7 @@ El dueño es Alfred: escríbele en **español**, con respuestas cortas. No es pr
 ## Modos (resumen de reglas)
 - **Destino**: cada turno robas una carta y haces lo que dice (cartas de 1-3 movimientos, convertir, revivir, bloqueo...). Variante de fin de turno elegible (al amenazar al rey / al capturar).
 - **Arsenal**: mano de hasta 3 cartas + Escudo inicial. Cada turno: primero, si quieres, **una carta**; después, **tu movimiento** (Apuesta es la única que quita el movimiento). Robas carta cada 3 turnos y al perder piezas (que no sean peones). Descartar da puntos; con 5 se asciende una pieza (peón → caballo/alfil → torre → dama). Se gana capturando el rey. Sin movimientos posibles = tablas.
-- Cartas de Arsenal: comunes (Salto, Enroque, Apuesta, Ruleta, Trampa), raras (Fantasma, Robo, Sed de sangre), épicas (Congelar, Doble paso, Posesión). Dos repetidas se pueden combinar en una de rareza superior.
+- Cartas de Arsenal: comunes (Enroque, Apuesta, Ruleta, Trampa, Pedrolo), raras (Salto de caballo, Robo, Sed de sangre, Doble paso, Posesión), épicas (Congelar, Fantasma, Resurrección). Enroque deja inmóviles ese turno a las dos piezas intercambiadas; el Pedrolo es una pieza especial `type:'x'` en el tablero (nadie la cruza; solo se rompe inmolando una pieza que no sea peón ni rey). Dos repetidas se pueden combinar en una de rareza superior.
 
 ## Convenciones
 - Todo el texto de la interfaz y los comentarios en español.

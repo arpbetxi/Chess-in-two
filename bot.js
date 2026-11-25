@@ -19,7 +19,7 @@
 
   const Engine = root.Engine || (typeof require !== 'undefined' ? require('./engine.js') : null);
 
-  const VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+  const VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0, x: 0 };
   const WIN = 100000;
   const BEAM = 60; // combinaciones que se siguen explorando en cada paso
 
@@ -125,7 +125,7 @@
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
         const p = board[r][c];
-        if (!p) continue;
+        if (!p || p.type === 'x') continue;   // los pedrolos (Arsenal) no puntúan
         const v = VALUES[p.type];
         const i = r * 8 + c;
         const sign = p.color === me ? 1 : -1;

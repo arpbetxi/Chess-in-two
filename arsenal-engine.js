@@ -23,8 +23,8 @@
   const Def = root.Arsenal || (typeof require !== 'undefined' ? require('./arsenal.js').Arsenal : null);
   const BotLib = function () { return root.Bot || (typeof require !== 'undefined' ? require('./bot.js') : null); };
 
-  const VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
-  const PIECE_NAMES = { p: 'peón', n: 'caballo', b: 'alfil', r: 'torre', q: 'dama', k: 'rey' };
+  const VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0, x: 0 };
+  const PIECE_NAMES = { p: 'peón', n: 'caballo', b: 'alfil', r: 'torre', q: 'dama', k: 'rey', x: 'pedrolo' };
   const COLOR_NAMES = { w: 'blancas', b: 'negras' };
   // Mismo orden que el dibujo de la ruleta (cards/arsenal/ruleta.svg), en el sentido de las agujas del reloj
   // Dos ruedas (las dos con valor esperado +0,5). La arriesgada es (−3, +9, −3, −1) repetida dos veces: la media es (−3 + 9 − 3 − 1) / 4
@@ -249,6 +249,11 @@
         if (!p || p.color !== color || isFrozen(state, P, p)) continue;
         for (const m of rawMoves(state, r, c, buff)) {
           const t = targetOf(state, m);
+          if (t && t.type === 'x') {
+            // Pedrolo: nadie lo atraviesa; solo una pieza (ni peón ni rey) puede inmolarse contra él
+            if (p.type !== 'p' && p.type !== 'k') list.push({ from: m.from, to: m.to, sacrifice: true });
+            continue;
+          }
           if (t && m.capture) {
             if (isShielded(state, t)) continue;          // Escudo: no se puede capturar
             if (second && t.type === 'k') continue;      // Doble paso: el segundo no captura al rey
@@ -319,6 +324,21 @@
     const b = state.board;
     const fr = valid.from[0], fc = valid.from[1], tr = valid.to[0], tc = valid.to[1];
     const p = b[fr][fc];
+    if (valid.sacrifice) {
+      // Se inmola contra un Pedrolo: desaparecen los dos, y no se roba carta por la pérdida
+      b[tr][tc] = null;
+      b[fr][fc] = null;
+      state.captured[p.color].push(p.type);
+      if (state.ep && state.ep.player !== state.current) state.ep = null;
+      log(state, '🪨 ' + name(state, state.current) + ': el ' + PIECE_NAMES[p.type] + ' de ' + sq(fr, fc) + ' se inmola contra el pedrolo de ' + sq(tr, tc) + ': desaparecen los dos.');
+      state.lastMove = { from: [fr, fc], to: [tr, tc] };
+      state.lastConverted = [];
+      state.movesThisTurn++;
+      state.movesLeft--;
+      if (state.movesLeft > 0 && legalMoves(state).length > 0) return true;
+      endTurn(state);
+      return true;
+    }
     let captured = null;
     if (valid.ep) {
       captured = removePiece(state, state.ep.pawnPos[0], state.ep.pawnPos[1]);
@@ -486,7 +506,31 @@
     if (id === 'robo' && !state.hands[other(P)].length) return { ok: false, why: 'Tu rival no tiene cartas.' };
     if (id === 'posesion' && !possessionPieces(state).length) return { ok: false, why: 'No hay ninguna pieza rival que se pueda poseer.' };
     if (id === 'enroque' && ownPieces(state).length < 2) return { ok: false, why: 'Necesitas dos piezas.' };
+    if (id === 'resurreccion') {
+      if (!revivableTypes(state).length) return { ok: false, why: 'No tienes ningún caballo, alfil o torre capturado.' };
+      if (!freeBackSquares(state).length) return { ok: false, why: 'Tu primera fila está llena.' };
+    }
     return { ok: true };
+  }
+
+  // Resurrección: tipos de pieza propia capturada que pueden volver (ni peón, ni dama, ni rey)
+  function revivableTypes(state) {
+    const out = [];
+    state.captured[colorOf(state, state.current)].forEach(function (t) {
+      if ((t === 'n' || t === 'b' || t === 'r') && out.indexOf(t) < 0) out.push(t);
+    });
+    return out;
+  }
+  // Casillas libres de tu primera fila
+  function freeBackSquares(state) {
+    const row = colorOf(state, state.current) === 'w' ? 7 : 0;
+    const out = [];
+    for (let c = 0; c < 8; c++) if (!state.board[row][c]) out.push([row, c]);
+    return out;
+  }
+  function newPieceId(state) {
+    state.nextPieceId = (state.nextPieceId || 1000) + 1;
+    return state.nextPieceId;
   }
 
   function ownPieces(state) {
@@ -565,6 +609,13 @@
         if (id === 'escudo' && !(b[t.sq[0]][t.sq[1]] && b[t.sq[0]][t.sq[1]].color === mine)) return false;
         if (id === 'trampa' && (b[t.sq[0]][t.sq[1]] || state.traps.some(function (x) { return x.r === t.sq[0] && x.c === t.sq[1]; }))) return false;
         break;
+      case 'pedrolo':
+        if (!t.sq || !inside(t.sq[0], t.sq[1]) || b[t.sq[0]][t.sq[1]]) return false;
+        break;
+      case 'resurreccion':
+        if (!t.sq || !inside(t.sq[0], t.sq[1]) || revivableTypes(state).indexOf(t.type) < 0) return false;
+        if (!freeBackSquares(state).some(function (q) { return q[0] === t.sq[0] && q[1] === t.sq[1]; })) return false;
+        break;
       case 'enroque': {
         if (!t.a || !t.b || (t.a[0] === t.b[0] && t.a[1] === t.b[1])) return false;
         const pa = b[t.a[0]] && b[t.a[0]][t.a[1]], pb = b[t.b[0]] && b[t.b[0]][t.b[1]];
@@ -636,6 +687,22 @@
         state.phase = 'ruletaElegir';
         log(state, '🎡 ' + name(state, P) + ' usa la Ruleta y elige qué rueda girar.');
         return true;
+      case 'pedrolo': {
+        // Si había una trampa en esa casilla, queda enterrada
+        state.traps = state.traps.filter(function (x) { return !(x.r === t.sq[0] && x.c === t.sq[1]); });
+        b[t.sq[0]][t.sq[1]] = { id: newPieceId(state), type: 'x', color: 'x', moved: true };
+        log(state, '🪨 ' + name(state, P) + ' coloca un pedrolo en ' + sq(t.sq[0], t.sq[1]) + '.');
+        checkStuck(state);              // después de la carta, el jugador mueve
+        return true;
+      }
+      case 'resurreccion': {
+        const list = state.captured[mine];
+        list.splice(list.indexOf(t.type), 1);
+        b[t.sq[0]][t.sq[1]] = { id: newPieceId(state), type: t.type, color: mine, moved: true };
+        log(state, '✨ ' + name(state, P) + ' resucita un ' + PIECE_NAMES[t.type] + ' en ' + sq(t.sq[0], t.sq[1]) + '.');
+        checkStuck(state);
+        return true;
+      }
       case 'trampa':
         state.traps.push({ r: t.sq[0], c: t.sq[1], owner: P });
         log(state, '🪤 ' + name(state, P) + ' coloca una trampa oculta en algún lugar del tablero.');
@@ -648,7 +715,7 @@
             if (!inside(r, c)) continue;
             squares.push([r, c]);
             const p = b[r][c];
-            if (p && p.type !== 'k' && !isShielded(state, p)) ids.push(p.id);
+            if (p && p.type !== 'k' && p.type !== 'x' && !isShielded(state, p)) ids.push(p.id);
           }
         }
         state.frozen = { ids: ids, player: other(P), squares: squares };
@@ -971,6 +1038,20 @@
       });
       if (bestSq) out.push({ action: { type: 'play', card: 'trampa', target: { sq: bestSq } }, score: base.score + Math.min(bestW, 9) * 0.12 });
     }
+    // Resurrección: la pieza más valiosa que pueda volver, en la casilla que mejor quede
+    if (has('resurreccion')) {
+      const ts = [];
+      revivableTypes(view).forEach(function (ty) {
+        freeBackSquares(view).forEach(function (q) { ts.push({ sq: q, type: ty }); });
+      });
+      best('resurreccion', ts);
+    }
+    // Pedrolo: la casilla vacía donde más estorba al rival (según la evaluación del tablero)
+    if (has('pedrolo')) {
+      const ts = [];
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) if (!view.board[r][c]) ts.push({ sq: [r, c] });
+      best('pedrolo', ts);
+    }
     // Ruleta: si va perdiendo, o si en promedio sale a cuenta
     if (has('ruleta')) {
       const ev = ruletaExpected(view, P, level);
@@ -1065,6 +1146,8 @@
 
   const ArsenalEngine = {
     VALUES: VALUES,
+    revivableTypes: revivableTypes,
+    freeBackSquares: freeBackSquares,
     RULETA: RULETA,
     RULETAS: RULETAS,
     CARD: CARD,

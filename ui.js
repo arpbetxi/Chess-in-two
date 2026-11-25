@@ -18,6 +18,7 @@
   // de algunos navegadores (Samsung Internet) no cambia sus colores.
   const PIECE_SRC = {};
   function pieceSrc(type, color) {
+    if (type === 'x') return 'cards/arsenal/piedra.svg';   // pedrolo (Arsenal)
     const key = type + color;
     if (!PIECE_SRC[key]) {
       const fill = color === 'w' ? '#ffffff' : '#1b1b1b';
@@ -203,7 +204,7 @@
         }
 
         const t = targets[r + ',' + c];
-        if (t) sq.classList.add(t.capture ? 'capture' : 'target');
+        if (t) sq.classList.add(t.capture ? 'capture' : t.sacrifice ? 'sacrifice' : 'target');
         if (isArsenal()) arsenalDecorate(sq, r, c, aCand);
         if (active && Engine.canConvert(state, r, c)) sq.classList.add('convertible');
         if (reviveType && Engine.canRevivePlace(state, reviveType, r, c)) sq.classList.add('placeable');
@@ -881,7 +882,7 @@
 
   // ---------- Modo Arsenal ----------
   const A = window.ArsenalEngine;
-  const NEEDS = { escudo: 1, trampa: 1, congelar: 1, enroque: 2, posesion: 1 };
+  const NEEDS = { escudo: 1, trampa: 1, congelar: 1, enroque: 2, posesion: 1, pedrolo: 1, resurreccion: 1 };
   const ASC_NEXT = { p: ['n', 'b'], n: ['r'], b: ['r'], r: ['q'] };
   let aPick = null;        // carta de la mano seleccionada: { id, index } (index -1 = Escudo)
   let aTarget = null;      // eligiendo objetivo en el tablero: { card, picks }
@@ -940,7 +941,11 @@
     switch (aTarget.card) {
       case 'escudo': A.ownPieces(state).forEach(add); break;
       case 'trampa':
+      case 'pedrolo':
         for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) if (!b[r][c]) add([r, c]);
+        break;
+      case 'resurreccion':
+        if (aTarget.revType) A.freeBackSquares(state).forEach(add);
         break;
       case 'congelar':
         for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) add([r, c]);
@@ -986,6 +991,8 @@
         case 'congelar': return 'Elige el centro de la zona de 3×3 que quieres congelar.';
         case 'enroque': return n ? 'Elige la segunda pieza del intercambio.' : 'Elige la primera pieza del intercambio.';
         case 'posesion': return 'Elige la pieza rival que vas a poseer este turno.';
+        case 'pedrolo': return 'Elige la casilla vacía donde colocar el pedrolo. Nadie podrá atravesarlo.';
+        case 'resurreccion': return aTarget.revType ? 'Elige la casilla libre de tu primera fila donde reaparece.' : 'Elige qué pieza capturada quieres resucitar.';
       }
     }
     let t;
@@ -1173,6 +1180,17 @@
       addP(arsenalInstructions());
       const btns = document.createElement('div');
       btns.className = 'a-btns';
+      if (aTarget && aTarget.card === 'resurreccion' && !aTarget.revType) {
+        A.revivableTypes(state).forEach(function (ty) {
+          const b = button(Engine.PIECE_NAMES[ty].charAt(0).toUpperCase() + Engine.PIECE_NAMES[ty].slice(1), function () {
+            aTarget.revType = ty;
+            aMsg = '';
+            render();
+          });
+          b.insertBefore(pieceImg(ty, Engine.myColor(state)), b.firstChild);
+          btns.appendChild(b);
+        });
+      }
       btns.appendChild(button('Cancelar', cancelArsenalChoice, 'secondary'));
       dec.appendChild(btns);
     }
@@ -1227,6 +1245,7 @@
         const pk = aTarget.picks;
         let target;
         if (id === 'enroque') target = { a: pk[0], b: pk[1] };
+        else if (id === 'resurreccion') target = { sq: pk[0], type: aTarget.revType };
         else target = { sq: pk[0] };
         dispatch({ type: 'play', card: id, target: target });
       } else {
