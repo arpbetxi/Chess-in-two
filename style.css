@@ -907,7 +907,7 @@ main.game { gap: 32px; padding: 20px 32px; }
 
 .info-panel { display: flex; flex-direction: column; gap: 10px; }
 .sheet-head { display: none; }
-.tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; background: #23272d; border-radius: 10px; padding: 4px; }
+.tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; background: #23272d; border-radius: 10px; padding: 4px; }
 .tab { height: 34px; padding: 0; border-radius: 7px; background: transparent; color: var(--muted); font-size: 0.88rem; }
 .tab.active { background: #3a414c; color: #fff; font-weight: 600; }
 .tab-body { min-height: 90px; }
@@ -1266,4 +1266,88 @@ main.game { gap: 32px; padding: 20px 32px; }
   40% { transform: translate(3px, -2px); }
   60% { transform: translate(-2px, -1px); }
   80% { transform: translate(2px, 1px); }
+}
+
+/* ---------- Mesas de jugador: una a cada lado del tablero, siempre en el mismo sitio ---------- */
+main.game { align-items: flex-start; }
+.ptable {
+  width: 190px; flex-shrink: 0; box-sizing: border-box;
+  background: var(--panel); border: 2px solid transparent; border-radius: 12px;
+  padding: 10px; display: flex; flex-direction: column; gap: 10px;
+}
+.ptable.hidden { display: none; }
+.ptable.active { border-color: var(--accent); }
+.arsenal-on .ptable.active { border-color: #a45ee0; }
+.t-head { display: flex; align-items: center; gap: 10px; min-height: 36px; }
+.pb-dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #5c6675; flex-shrink: 0; }
+.pb-dot.w { background: #fdfdfd; }
+.pb-dot.b { background: #111; }
+.ptable.active .pb-dot { box-shadow: 0 0 0 3px var(--accent); }
+.arsenal-on .ptable.active .pb-dot { box-shadow: 0 0 0 3px #a45ee0; }
+.pb-text { display: flex; flex-direction: column; min-width: 0; }
+.pb-name { font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pb-sub { font-size: 0.76rem; color: var(--muted); }
+.pb-right { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--muted); }
+.t-slot { display: flex; flex-direction: column; gap: 8px; }
+.t-backs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.t-backs:empty { display: none; }
+.t-backs .pb-back {
+  width: 44px; height: 62px; margin: 0; border-radius: 6px; border: 2px solid #6c7684;
+  background: repeating-linear-gradient(45deg, #4a5260, #4a5260 3px, #3a414c 3px, #3a414c 6px);
+}
+.t-shield { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; color: #f0d68a; background: #343a43; border-radius: 6px; padding: 4px 7px; }
+.a-own { display: flex; flex-direction: column; gap: 8px; }
+.t-fallen { display: flex; flex-direction: column; gap: 4px; }
+.t-label { font-size: 0.78rem; color: var(--muted); }
+.t-fallen-list { display: flex; flex-wrap: wrap; gap: 2px; min-height: 34px; align-items: center; }
+.t-none { color: var(--muted); font-size: 0.8rem; }
+.tab-body { min-height: 90px; }
+
+/* Ordenador ancho: mesa | tablero | mesa | panel */
+@media (min-width: 1100px) {
+  :root { --sq: min(calc((100vh - 120px) / 8), calc((100vw - 880px) / 8), 86px); }
+  main.game { gap: 20px; padding: 20px 24px; }
+  .panel { width: 340px; }
+}
+
+/* Pantalla mediana: mesa | tablero | mesa y el panel debajo */
+@media (min-width: 761px) and (max-width: 1099px) {
+  :root { --sq: min(calc((100vw - 460px) / 8), 70px); }
+  main.game { flex-wrap: wrap; justify-content: center; gap: 16px; padding: 16px; }
+  .panel { flex-basis: 100%; width: 100%; max-width: 720px; }
+}
+
+/* Móvil: mesa del rival arriba, tablero y tu mesa debajo (ver el bloque "móvil" más arriba) */
+@media (max-width: 760px) {
+  .ptable { width: 100%; padding: 6px 8px; gap: 6px; border-radius: 10px; }
+  .t-head { min-height: 30px; }
+  .pb-dot { width: 22px; height: 22px; }
+  .t-slot { flex-direction: row; align-items: flex-end; }
+  .a-own { gap: 4px; width: 100%; }
+  .a-hand-head { display: none; }
+  .a-hand { min-height: 0; gap: 6px; flex-wrap: nowrap; }
+  .a-hand .acard { width: 56px; height: 78px; padding: 3px; flex-shrink: 0; }
+  .a-hand .acard img { width: 38px; height: 38px; }
+  .a-hand .acard .name { font-size: 0.55rem; }
+  .a-points img { width: 24px; height: 24px; }
+  .t-backs .pb-back { width: 34px; height: 48px; }
+  .t-fallen { flex-direction: row; align-items: center; gap: 8px; }
+  .t-fallen-list { min-height: 28px; }
+}
+
+/* Ajustes de las mesas */
+.a-own .a-hand-head { gap: 8px; }
+.a-own .a-hand-head h3 { font-size: 0.85rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.a-own .a-points { flex-wrap: wrap; }
+.a-own .a-bar { min-width: 60px; }
+.a-own .a-ascend { flex: 1 0 100%; }
+@media (max-width: 760px) {
+  .ptable { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 10px; row-gap: 4px; }
+  .t-head { flex: 1 0 100%; }
+  .t-slot { flex: 0 1 auto; }
+  .t-slot:has(.a-own) { flex: 1 0 100%; }
+  .t-fallen { margin-left: auto; }
+  .t-label { font-size: 0.7rem; }
+  .a-own .a-points { flex-wrap: nowrap; }
+  .a-own .a-ascend { flex: 0 0 auto; }
 }

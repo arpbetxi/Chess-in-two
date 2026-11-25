@@ -400,32 +400,12 @@
             ' para pasarla' + (state.pending === 1 ? '' : 's') + ' a tu bando (no el rey).';
           break;
         case 'revive':
-          text = 'Elige abajo una de tus piezas capturadas y luego una casilla vacía. ' +
+          text = 'Elige una de tus piezas caídas (en tu mesa) y luego una casilla vacía. ' +
             (state.pending === 1 ? 'Queda 1.' : 'Quedan ' + state.pending + '.');
           break;
       }
     }
     $('instructions').textContent = text;
-
-    // Capturadas
-    for (const col of ['w', 'b']) {
-      const list = $('captured-' + col);
-      list.innerHTML = '';
-      const canPick = active && state.phase === 'revive' && col === color;
-      state.captured[col].forEach(function (type, idx) {
-        const el = document.createElement(canPick ? 'button' : 'span');
-        el.className = 'cap-piece ' + col + (canPick && reviveChoice === idx ? ' chosen' : '');
-        el.appendChild(pieceImg(type, col));
-        el.title = Engine.PIECE_NAMES[type];
-        if (canPick) {
-          el.addEventListener('click', function () {
-            reviveChoice = idx;
-            render();
-          });
-        }
-        list.appendChild(el);
-      });
-    }
 
     // Registro (lo más reciente arriba)
     const log = $('log');
@@ -455,9 +435,9 @@
     return col + (mode === 'bot' ? ' · bot' : ' · rival');
   }
 
+  // Cabecera de la mesa de un jugador: color, nombre y (en Arsenal, si no es la mano visible) escudo y puntos
   function renderBar(el, p) {
     el.innerHTML = '';
-    el.classList.toggle('active', !!mode && state.phase !== 'over' && state.current === p);
     const color = state.playerColor[p];
     const dot = document.createElement('div');
     dot.className = 'pb-dot ' + color;
@@ -473,33 +453,76 @@
     txt.appendChild(sub);
     el.appendChild(dot);
     el.appendChild(txt);
-    const right = document.createElement('div');
-    right.className = 'pb-right';
-    // Piezas que este jugador ha capturado
-    const caps = state.captured[color === 'w' ? 'b' : 'w'] || [];
-    if (caps.length) {
-      const c = document.createElement('span');
-      c.className = 'pb-caps ' + (color === 'w' ? 'b' : 'w');
-      caps.forEach(function (t) { c.appendChild(pieceImg(t, color === 'w' ? 'b' : 'w')); });
-      right.appendChild(c);
-    }
     if (isArsenal() && p !== handOwner()) {
-      const n = state.hands[p].length;
-      const backs = document.createElement('span');
-      backs.className = 'pb-backs';
-      backs.title = n + (n === 1 ? ' carta' : ' cartas');
-      for (let i = 0; i < n; i++) {
-        const b = document.createElement('span');
-        b.className = 'pb-back';
-        backs.appendChild(b);
-      }
-      right.appendChild(backs);
+      const right = document.createElement('div');
+      right.className = 'pb-right';
       if (state.escudo[p]) right.insertAdjacentHTML('beforeend', ICON_SHIELD);
       const pts = document.createElement('span');
+      pts.title = 'Puntos de Ascenso';
       pts.textContent = state.points[p] + '/' + ArsenalEngine.ASC_POINTS;
       right.appendChild(pts);
+      el.appendChild(right);
     }
-    el.appendChild(right);
+  }
+
+  // Mesa fija de un jugador (a un lado del tablero): cabecera, cartas y piezas caídas
+  function ensureTable(el) {
+    if (el.firstChild) return;
+    el.innerHTML = '<div class="t-head"></div>' +
+      '<div class="t-slot"><div class="t-backs"></div></div>' +
+      '<div class="t-fallen"><span class="t-label">Piezas caídas</span><div class="t-fallen-list"></div></div>';
+  }
+
+  function renderTable(el, p) {
+    ensureTable(el);
+    const col = state.playerColor[p];
+    el.classList.toggle('active', !!mode && state.phase !== 'over' && state.current === p);
+    const ownHand = isArsenal() && p === handOwner();
+    el.classList.toggle('own-hand', ownHand);
+    renderBar(el.querySelector('.t-head'), p);
+
+    // Cartas: la mano visible (la tuya; en local, la de quien juega) o el dorso de las del rival
+    const slot = el.querySelector('.t-slot');
+    const backs = el.querySelector('.t-backs');
+    const own = $('aOwn');
+    backs.innerHTML = '';
+    if (ownHand) {
+      if (own.parentNode !== slot) slot.insertBefore(own, backs);
+    } else {
+      if (own.parentNode === slot) $('aPark').appendChild(own);
+      if (isArsenal()) {
+        const n = state.hands[p].length;
+        for (let i = 0; i < n; i++) {
+          const b = document.createElement('span');
+          b.className = 'pb-back';
+          backs.appendChild(b);
+        }
+        if (state.escudo[p]) backs.insertAdjacentHTML('beforeend', '<span class="t-shield" title="Escudo disponible">' + ICON_SHIELD + ' Escudo</span>');
+        if (!n && !state.escudo[p]) backs.insertAdjacentHTML('beforeend', '<span class="a-hand-empty">Sin cartas</span>');
+        backs.title = n + (n === 1 ? ' carta' : ' cartas');
+      }
+    }
+    slot.classList.toggle('hidden', !isArsenal());
+
+    // Piezas caídas de este jugador (también sirven para elegir qué pieza revivir)
+    const list = el.querySelector('.t-fallen-list');
+    list.innerHTML = '';
+    const canPick = canAct() && state.phase === 'revive' && col === Engine.myColor(state);
+    const fallen = state.captured[col] || [];
+    fallen.forEach(function (type, idx) {
+      const piece = document.createElement(canPick ? 'button' : 'span');
+      piece.className = 'cap-piece ' + col + (canPick && reviveChoice === idx ? ' chosen' : '');
+      piece.appendChild(pieceImg(type, col));
+      piece.title = Engine.PIECE_NAMES[type];
+      if (canPick) {
+        piece.addEventListener('click', function () {
+          reviveChoice = idx;
+          render();
+        });
+      }
+      list.appendChild(piece);
+    });
+    if (!fallen.length) list.insertAdjacentHTML('beforeend', '<span class="t-none">Ninguna</span>');
   }
 
   function step(n, title, sub, cls) {
@@ -547,15 +570,15 @@
     chip.classList.toggle('hidden', !mode);
     chip.classList.toggle('arsenal', isArsenal());
     chip.textContent = isArsenal() ? 'Arsenal' : 'Destino';
-    // Abajo, el jugador cuyo color está abajo en el tablero
+    // Abajo, el jugador cuyo color está abajo en el tablero; su mesa va en un lado y la del rival en el otro (fijas durante la partida)
     const bottomColor = isFlipped() ? 'b' : 'w';
     const bottom = state.playerColor[1] === bottomColor ? 1 : 2;
-    const showBars = !!mode;
-    $('rivalBar').classList.toggle('hidden', !showBars);
-    $('meBar').classList.toggle('hidden', !showBars);
-    if (showBars) {
-      renderBar($('rivalBar'), bottom === 1 ? 2 : 1);
-      renderBar($('meBar'), bottom);
+    const showTables = !!mode;
+    $('tblTop').classList.toggle('hidden', !showTables);
+    $('tblBottom').classList.toggle('hidden', !showTables);
+    if (showTables) {
+      renderTable($('tblTop'), bottom === 1 ? 2 : 1);
+      renderTable($('tblBottom'), bottom);
     }
     renderSteps();
   }
@@ -1120,15 +1143,6 @@
     lastPlayCount = pc;
     lastRuletaCount = rc;
     lastRoboCount = bc;
-
-    // Rival
-    $('aRival').innerHTML = '';
-    const rv = document.createElement('span');
-    rv.innerHTML = '<strong></strong>';
-    rv.firstChild.textContent = Engine.playerName(state, R);
-    rv.appendChild(document.createTextNode(': ' + state.hands[R].length + (state.hands[R].length === 1 ? ' carta' : ' cartas') +
-      ' · Escudo ' + (state.escudo[R] ? 'disponible' : 'usado') + ' · ' + state.points[R] + '/' + A.ASC_POINTS + ' puntos'));
-    $('aRival').appendChild(rv);
 
     // Efectos activos
     const fx = [];

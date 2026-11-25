@@ -11,7 +11,7 @@
   <!-- La web ya es oscura: evita que el "modo oscuro" del navegador cambie los colores (piezas negras que salían blancas) -->
   <meta name="color-scheme" content="dark">
   <!-- ?v=... obliga al navegador a descargar la versión nueva tras cada cambio -->
-  <link rel="stylesheet" href="style.css?v=20261125c">
+  <link rel="stylesheet" href="style.css?v=20261125d">
 </head>
 <body>
   <header>
@@ -27,13 +27,17 @@
   </header>
 
   <main class="game">
+    <!-- Mesa del jugador de arriba (a la izquierda en ordenador) -->
+    <aside id="tblTop" class="ptable" aria-label="Mesa del jugador de arriba"></aside>
+
     <section class="board-col">
-      <div id="rivalBar" class="player-bar"></div>
       <div class="board-wrap">
         <div id="board" class="board" aria-label="Tablero"></div>
       </div>
-      <div id="meBar" class="player-bar"></div>
     </section>
+
+    <!-- Mesa del jugador de abajo (a la derecha en ordenador) -->
+    <aside id="tblBottom" class="ptable" aria-label="Mesa del jugador de abajo"></aside>
 
     <aside class="panel">
       <div class="panel-head">
@@ -44,21 +48,9 @@
 
       <!-- Panel del modo Arsenal -->
       <div id="arsenalPanel" class="arsenal-panel hidden">
-        <div id="aRival" class="a-rival"></div>
         <div id="aEffects" class="a-effects"></div>
-        <div class="a-hand-head">
-          <h3 id="aHandTitle">Tu mano</h3>
-          <span id="aHandCount" class="hint"></span>
-        </div>
-        <div id="aHand" class="a-hand"></div>
         <div id="aSelected" class="a-selected hidden"></div>
         <div id="aDecision" class="a-decision hidden"></div>
-        <div class="a-points">
-          <img src="cards/arsenal/ascenso.svg" alt="" width="34" height="34">
-          <div class="a-bar"><div id="aPtsFill" class="a-bar-fill"></div></div>
-          <span id="aPts" class="a-pts">0/5</span>
-          <button id="aAscend" class="a-ascend" disabled>Ascender</button>
-        </div>
       </div>
 
       <div id="destinoArea" class="card-area">
@@ -81,15 +73,10 @@
         </div>
         <div class="tabs" role="tablist">
           <button class="tab active" role="tab" data-tab="log">Registro</button>
-          <button class="tab" role="tab" data-tab="captured">Capturadas</button>
           <button class="tab" role="tab" data-tab="score">Marcador</button>
         </div>
         <div class="tab-body log" data-tab="log">
           <ol id="log"></ol>
-        </div>
-        <div class="tab-body captured hidden" data-tab="captured">
-          <div class="captured-row"><span class="label">Blancas:</span><div id="captured-w" class="captured-list"></div></div>
-          <div class="captured-row"><span class="label">Negras:</span><div id="captured-b" class="captured-list"></div></div>
         </div>
         <div class="tab-body hidden" data-tab="score">
           <div id="scoreBox" class="score-box hidden">
@@ -104,6 +91,23 @@
       </div>
     </aside>
   </main>
+
+  <!-- La mano y los puntos de Ascenso viven aquí cuando no están en una mesa (ui.js los coloca) -->
+  <div id="aPark" class="hidden">
+    <div id="aOwn" class="a-own">
+      <div class="a-hand-head">
+        <h3 id="aHandTitle">Tu mano</h3>
+        <span id="aHandCount" class="hint"></span>
+      </div>
+      <div id="aHand" class="a-hand"></div>
+      <div class="a-points">
+        <img src="cards/arsenal/ascenso.svg" alt="" width="34" height="34">
+        <div class="a-bar"><div id="aPtsFill" class="a-bar-fill"></div></div>
+        <span id="aPts" class="a-pts">0/5</span>
+        <button id="aAscend" class="a-ascend" disabled>Ascender</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Barra inferior en el móvil -->
   <nav id="mobileNav" class="mobile-nav" aria-label="Más opciones">
@@ -487,25 +491,25 @@
       document.write('<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"><\/script>');
     }
   </script>
-  <script src="config.js?v=20261125c"></script>
-  <script src="engine.js?v=20261125c"></script>
-  <script src="net.js?v=20261125c"></script>
-  <script src="bot.js?v=20261125c"></script>
-  <script src="arsenal.js?v=20261125c"></script>
-  <script src="arsenal-engine.js?v=20261125c"></script>
-  <script src="firebase-config.js?v=20261125c"></script>
+  <script src="config.js?v=20261125d"></script>
+  <script src="engine.js?v=20261125d"></script>
+  <script src="net.js?v=20261125d"></script>
+  <script src="bot.js?v=20261125d"></script>
+  <script src="arsenal.js?v=20261125d"></script>
+  <script src="arsenal-engine.js?v=20261125d"></script>
+  <script src="firebase-config.js?v=20261125d"></script>
   <script>
     // Las cuentas solo se cargan si hay configuración de Firebase
     // ?sincuentas en la dirección las desactiva (lo usan las pruebas)
     if (window.FIREBASE_CONFIG && !/[?&]sincuentas/.test(location.search)) {
       var fb = document.createElement('script');
       fb.type = 'module';
-      fb.src = 'firebase-backend.js?v=20261125c';
+      fb.src = 'firebase-backend.js?v=20261125d';
       document.head.appendChild(fb);
     }
   </script>
-  <script src="ui.js?v=20261125c"></script>
-  <script src="modes.js?v=20261125c"></script>
-  <script src="cuentas.js?v=20261125c"></script>
+  <script src="ui.js?v=20261125d"></script>
+  <script src="modes.js?v=20261125d"></script>
+  <script src="cuentas.js?v=20261125d"></script>
 </body>
 </html>

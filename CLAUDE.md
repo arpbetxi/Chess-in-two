@@ -34,6 +34,7 @@ El dueño es Alfred: escríbele en **español**, con respuestas cortas. No es pr
 - Cartas de Arsenal: comunes (Enroque, Apuesta, Ruleta, Trampa, Pedrolo), raras (Salto de caballo, Robo, Sed de sangre, Doble paso, Posesión), épicas (Congelar, Fantasma, Resurrección). Enroque deja inmóviles ese turno a las dos piezas intercambiadas; el Pedrolo es una pieza especial `type:'x'` en el tablero (nadie la cruza; solo se rompe inmolando una pieza que no sea peón ni rey). Dos repetidas se pueden combinar en una de rareza superior.
 
 ## Convenciones
+- **Mesas de jugador**: cada jugador tiene una mesa fija (`#tblTop` / `#tblBottom`, `renderTable` en `ui.js`) a un lado del tablero en ordenador (arriba y abajo en móvil) con sus cartas (Arsenal) y sus piezas caídas. La mano propia (`#aOwn`, con `#aHand`) se coloca en la mesa de quien la ve; en local, la de quien juega; la otra mesa muestra solo dorsos.
 - Todo el texto de la interfaz y los comentarios en español.
 - **Caché**: al cambiar un `.js` o `.css`, sube el `?v=AAAAMMDDx` en `index.html` (todas las apariciones; p. ej. `sed -i 's/20261121b/20261121c/g' index.html`).
 - No romper el online: todo cambio de estado de partida pasa por acciones que el anfitrión aplica (`applyAction`), nunca modificando `state` solo en un cliente.
