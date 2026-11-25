@@ -69,6 +69,7 @@
   function revealTime() { return REVEAL_MS; }
   let revealDraw = null;    // nº de robo de la carta que se está mostrando (Destino), para sincronizar el cierre
   let revealTimer = null;
+  let cardIsFresh = false;  // la carta de este dibujado acaba de robarse (animación de entrada)
   let revealUntil = 0;      // el bot espera a que termine la animación
   const SAVE_KEY = 'ajedrezCartas.partidaOnline';
 
@@ -333,30 +334,12 @@
     // Mazo y carta
     $('deckCount').textContent = state.deck.length;
     $('drawBtn').disabled = !(active && state.phase === 'draw');
-    const slot = $('cardView');
-    slot.innerHTML = '';
-    // La carta recién robada entra con una pequeña animación
+    // La carta se dibuja en la mesa de su dueño (renderTable); aquí solo se detecta si es nueva
     const drawCount = state.drawCount || 0;
     const isNew = lastDrawCount !== null && drawCount > lastDrawCount;
     lastDrawCount = drawCount;
+    cardIsFresh = isNew;
     if (isNew && state.lastCard) showReveal(state.lastCard.card, state.lastCard.player);
-    if (state.card) {
-      const ce = cardElement(state.card, false);
-      if (isNew) ce.classList.add('fresh');
-      slot.appendChild(ce);
-      const cap = document.createElement('div');
-      cap.className = 'card-caption';
-      cap.textContent = Engine.cardDescription(state.card, state);
-      slot.appendChild(cap);
-    } else if (state.lastCard) {
-      const ce = cardElement(state.lastCard.card, true);
-      if (isNew) ce.classList.add('fresh');
-      slot.appendChild(ce);
-      const cap = document.createElement('div');
-      cap.className = 'card-caption';
-      cap.textContent = 'Última carta: Jugador ' + state.lastCard.player;
-      slot.appendChild(cap);
-    }
 
     // Instrucciones
     let text = '';
@@ -465,10 +448,39 @@
     }
   }
 
+  function renderTableCard(box, p) {
+    box.innerHTML = '';
+    let card = null, faded = false;
+    if (state.card && state.current === p) card = state.card;
+    else if (!state.card && state.lastCard && state.lastCard.player === p) { card = state.lastCard.card; faded = true; }
+    const cap = document.createElement('div');
+    cap.className = 't-card-cap';
+    if (!card) {
+      const empty = document.createElement('div');
+      empty.className = 't-card-empty';
+      empty.textContent = 'Carta';
+      box.appendChild(empty);
+      cap.textContent = 'Sin carta en juego';
+      box.appendChild(cap);
+      return;
+    }
+    const ce = cardElement(card, faded);
+    if (cardIsFresh && !faded) ce.classList.add('fresh');
+    box.appendChild(ce);
+    const name = document.createElement('b');
+    name.textContent = faded ? 'Última carta' : Engine.cardName(card);
+    cap.appendChild(name);
+    const desc = document.createElement('span');
+    desc.textContent = faded ? Engine.cardName(card)
+      : (card.kind === 'num' && state.phase === 'moves' ? 'Quedan ' + state.movesLeft : Engine.cardDescription(card, state));
+    cap.appendChild(desc);
+    box.appendChild(cap);
+  }
+
   // Mesa fija de un jugador (a un lado del tablero): cabecera, cartas y piezas caídas
   function ensureTable(el) {
     if (el.firstChild) return;
-    el.innerHTML = '<div class="t-head"></div>' +
+    el.innerHTML = '<div class="t-head"></div><div class="t-card"></div>' +
       '<div class="t-slot"><div class="t-backs"></div></div>' +
       '<div class="t-fallen"><span class="t-label">Piezas caídas</span><div class="t-fallen-list"></div></div>';
   }
@@ -480,6 +492,12 @@
     const ownHand = isArsenal() && p === handOwner();
     el.classList.toggle('own-hand', ownHand);
     renderBar(el.querySelector('.t-head'), p);
+
+    // Destino: hueco fijo para la carta (la lleva quien juega; la anterior queda difuminada en la mesa de quien la jugó)
+    const cardBox = el.querySelector('.t-card');
+    el.classList.toggle('has-card', !isArsenal());
+    cardBox.classList.toggle('hidden', isArsenal());
+    if (!isArsenal()) renderTableCard(cardBox, p);
 
     // Cartas: la mano visible (la tuya; en local, la de quien juega) o el dorso de las del rival
     const slot = el.querySelector('.t-slot');

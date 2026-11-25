@@ -1351,3 +1351,28 @@ main.game { align-items: flex-start; }
   .a-own .a-points { flex-wrap: nowrap; }
   .a-own .a-ascend { flex: 0 0 auto; }
 }
+
+/* ---------- Destino: hueco de carta en cada mesa ---------- */
+.t-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 0; }
+.t-card .card { width: 96px; height: 134px; padding: 6px; }
+.t-card .card .sym { font-size: 3.2rem; }
+.t-card .card .art { width: 62px; height: 62px; }
+.t-card-empty {
+  width: 96px; height: 134px; box-sizing: border-box; border: 1.5px dashed #5c6675; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: var(--muted);
+}
+.t-card-cap { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; min-height: 52px; font-size: 0.75rem; color: var(--muted); line-height: 1.3; }
+.t-card-cap b { font-size: 0.85rem; color: var(--text); }
+.t-card-cap span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+@media (max-width: 760px) {
+  .ptable.has-card .t-head { flex: 1 1 0; min-width: 0; }
+  .t-card { flex: 0 0 auto; padding: 0; }
+  .t-card .card { width: 46px; height: 64px; padding: 2px; border-width: 2px; border-radius: 9px; }
+  .t-card .card .sym { font-size: 1.6rem; }
+  .t-card .card .art { width: 32px; height: 32px; }
+  .t-card .card .name { display: none; }
+  .t-card-empty { width: 46px; height: 64px; border-radius: 9px; font-size: 0.7rem; }
+  .t-card-cap { display: none; }
+  .ptable.has-card .t-fallen { margin-left: 0; flex: 1 0 100%; }
+}
