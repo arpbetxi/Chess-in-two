@@ -99,6 +99,9 @@
       frozen: null,                     // { ids, player, squares }: piezas congeladas en el turno de `player`
       possessed: null,                  // { id, player }: pieza rival que `player` controla este turno (Posesión)
       traps: [],                        // { r, c, owner }: ocultas para todos
+      sprung: [],                       // { r, c, owner }: trampas que ya han saltado (se enseñan al acabar la partida)
+      trapCount: 0,                     // cuántas veces ha saltado una trampa (para la animación)
+      lastTrap: null,                   // { r, c, type, color, owner }: última pieza atrapada
       bloodlust: null,                  // jugador obligado a capturar en su turno
       ruletaElegir: null,               // { player }: elige qué rueda girar
       ruleta: null,                     // { value, idx, player, wheel }
@@ -296,8 +299,12 @@
     if (i < 0) return;
     const p = state.board[r][c];
     if (!p || p.type === 'k') return; // el rey es inmune (la trampa sigue ahí)
+    const trap = state.traps[i];
     state.traps.splice(i, 1);
     removePiece(state, r, c);
+    state.sprung = (state.sprung || []).concat([{ r: r, c: c, owner: trap.owner }]);
+    state.trapCount = (state.trapCount || 0) + 1;
+    state.lastTrap = { r: r, c: c, type: p.type, color: p.color, owner: trap.owner };
     log(state, '💥 ¡Trampa en ' + sq(r, c) + '! El ' + PIECE_NAMES[p.type] + ' de ' + COLOR_NAMES[p.color] + ' queda eliminado.');
   }
 
@@ -314,6 +321,12 @@
     state.phase = 'over';
     if (result.type === 'win') log(state, '🏆 ' + result.reason + '. Gana ' + name(state, result.player) + '.');
     else log(state, '🤝 ' + result.reason + '. Tablas.');
+    // Al acabar se destapan las trampas que seguían escondidas
+    if (state.traps && state.traps.length) {
+      log(state, '🪤 Trampas sin saltar: ' + state.traps.map(function (t) {
+        return sq(t.r, t.c) + ' (de ' + name(state, t.owner) + ')';
+      }).join(', ') + '.');
+    }
   }
 
   function doMove(state, move, promo) {
@@ -700,6 +713,7 @@
         list.splice(list.indexOf(t.type), 1);
         b[t.sq[0]][t.sq[1]] = { id: newPieceId(state), type: t.type, color: mine, moved: true };
         log(state, '✨ ' + name(state, P) + ' resucita un ' + PIECE_NAMES[t.type] + ' en ' + sq(t.sq[0], t.sq[1]) + '.');
+        checkTrap(state, t.sq[0], t.sq[1]);
         checkStuck(state);
         return true;
       }

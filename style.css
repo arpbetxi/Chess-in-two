@@ -1155,3 +1155,115 @@ main.game { gap: 32px; padding: 20px 32px; }
   .card-reveal.wheel-mode { --wheel: min(84vw, 340px, 46vh); }
   .ruleta-options { --wheel: min(40vw, 190px); }
 }
+
+/* ---------- Trampa de oso ---------- */
+.trap-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.trap-svg .tj { transition: transform 0.2s; }
+.trap-svg .tj-l { transform-origin: 18px 74px; }
+.trap-svg .tj-r { transform-origin: 82px 74px; }
+.trap-svg.open .tj-l { transform: rotate(-62deg); }
+.trap-svg.open .tj-r { transform: rotate(62deg); }
+.trap-mark { position: absolute; inset: 6%; z-index: 2; pointer-events: none; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5)); }
+.trap-mark.corner { inset: auto 0 0 auto; width: 52%; height: 52%; z-index: 3; }
+.trap-mark.sprung { opacity: 0.55; }
+.trap-owner { position: absolute; left: 4%; top: 4%; width: 24%; height: 24%; border-radius: 50%; border: 2px solid #1b1b1b; }
+.trap-owner.w { background: #fff; }
+.trap-owner.b { background: #222; border-color: #fff; }
+.trap-fx {
+  --d: 0s;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--sq) * 2.5);
+  height: calc(var(--sq) * 2.5);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 40;
+  animation: trapfx-life 2.6s linear both;
+  animation-delay: var(--el, 0ms);
+}
+.trap-fx .trap-svg { position: absolute; inset: 0; }
+.trap-fx .tj-l { animation: trapfx-jaw-l 2.6s linear both; animation-delay: var(--el, 0ms); }
+.trap-fx .tj-r { animation: trapfx-jaw-r 2.6s linear both; animation-delay: var(--el, 0ms); }
+.trap-victim {
+  position: absolute;
+  left: 50%;
+  bottom: 27%;
+  width: 34%;
+  height: 34%;
+  transform: translateX(-50%);
+  font-size: calc(var(--sq) * 0.85);
+  animation: trapfx-victim 2.6s linear both;
+  animation-delay: var(--el, 0ms);
+}
+.trap-victim .piece-img { width: 100%; height: 100%; }
+.trap-ring {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  width: 60%;
+  height: 60%;
+  margin: -30% 0 0 -30%;
+  border-radius: 50%;
+  border: 4px solid #ffd54a;
+  opacity: 0;
+  animation: trapfx-ring 2.6s linear both;
+  animation-delay: var(--el, 0ms);
+}
+.trap-clac {
+  position: absolute;
+  left: 50%;
+  top: 2%;
+  transform: translateX(-50%);
+  font-weight: 900;
+  font-size: calc(var(--sq) * 0.5);
+  color: #fff;
+  -webkit-text-stroke: 3px #b3261e;
+  paint-order: stroke fill;
+  white-space: nowrap;
+  opacity: 0;
+  animation: trapfx-clac 2.6s linear both;
+  animation-delay: var(--el, 0ms);
+}
+@keyframes trapfx-life {
+  0% { opacity: 0; scale: 0.6; }
+  8% { opacity: 1; scale: 1; }
+  86% { opacity: 1; scale: 1; }
+  100% { opacity: 0; scale: 0.92; }
+}
+@keyframes trapfx-jaw-l {
+  0%, 34% { transform: rotate(-78deg); animation-timing-function: ease-in; }
+  39% { transform: rotate(0deg); }
+  43% { transform: rotate(-5deg); }
+  47%, 100% { transform: rotate(0deg); }
+}
+@keyframes trapfx-jaw-r {
+  0%, 34% { transform: rotate(78deg); animation-timing-function: ease-in; }
+  39% { transform: rotate(0deg); }
+  43% { transform: rotate(5deg); }
+  47%, 100% { transform: rotate(0deg); }
+}
+@keyframes trapfx-victim {
+  0%, 38% { transform: translateX(-50%) translateY(0); opacity: 1; }
+  44% { transform: translateX(-50%) translateY(6%) scale(0.92); opacity: 1; }
+  62%, 100% { transform: translateX(-50%) translateY(30%) scale(0.5); opacity: 0; }
+}
+@keyframes trapfx-ring {
+  0%, 37% { opacity: 0; transform: scale(0.3); }
+  39% { opacity: 1; transform: scale(0.5); }
+  55%, 100% { opacity: 0; transform: scale(1.5); }
+}
+@keyframes trapfx-clac {
+  0%, 37% { opacity: 0; transform: translateX(-50%) scale(0.4); }
+  41% { opacity: 1; transform: translateX(-50%) scale(1.25); }
+  48%, 74% { opacity: 1; transform: translateX(-50%) scale(1); }
+  86%, 100% { opacity: 0; transform: translateX(-50%) scale(1); }
+}
+.board.trap-shake { animation: trap-shake 0.35s linear; }
+@keyframes trap-shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-3px, 2px); }
+  40% { transform: translate(3px, -2px); }
+  60% { transform: translate(-2px, -1px); }
+  80% { transform: translate(2px, 1px); }
+}

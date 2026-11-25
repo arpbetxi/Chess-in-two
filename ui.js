@@ -172,7 +172,78 @@
   }
 
   // ---------- Dibujo ----------
+  // ---------- Trampas: animación de la trampa de oso y destape al final ----------
+  const TRAP_FX_MS = 2600;
+  let lastTrapCount = null;
+  let trapFx = null;   // { r, c, type, color, start }
+
+  // Dibujo de la trampa de oso (vista lateral): placa, dos mandíbulas con dientes que se cierran
+  const TRAP_SVG = (function () {
+    function pt(rad, deg) {
+      const a = deg * Math.PI / 180;
+      return (50 + rad * Math.cos(a)).toFixed(1) + ' ' + (74 - rad * Math.sin(a)).toFixed(1);
+    }
+    function jaw(side, teethAngles) {
+      // side 'l': de 180° a 90°; side 'r': de 0° a 90°
+      const a0 = side === 'l' ? 180 : 0;
+      const sweepOut = side === 'l' ? 1 : 0;
+      let band = 'M' + pt(36, a0) + ' A36 36 0 0 ' + sweepOut + ' ' + pt(36, 90) + ' L' + pt(28, 90) + ' A28 28 0 0 ' + (1 - sweepOut) + ' ' + pt(28, a0) + ' Z';
+      let teeth = '';
+      teethAngles.forEach(function (a) {
+        teeth += 'M' + pt(28.5, a - 5) + ' L' + pt(19, a) + ' L' + pt(28.5, a + 5) + ' Z ';
+      });
+      return '<g class="tj tj-' + side + '"><path d="' + band + '" fill="#b9bec6" stroke="#1b1b1b" stroke-width="2.4" stroke-linejoin="round"/>' +
+        '<path d="' + teeth + '" fill="#e8ebf0" stroke="#1b1b1b" stroke-width="1.6" stroke-linejoin="round"/></g>';
+    }
+    const plate = '<rect x="10" y="73" width="80" height="10" rx="3" fill="#4a4f58" stroke="#1b1b1b" stroke-width="2.6"/>' +
+      '<circle cx="18" cy="74" r="3.2" fill="#9aa0aa" stroke="#1b1b1b" stroke-width="1.6"/><circle cx="82" cy="74" r="3.2" fill="#9aa0aa" stroke="#1b1b1b" stroke-width="1.6"/>';
+    return function (cls) {
+      return '<svg class="trap-svg ' + (cls || '') + '" viewBox="0 0 100 100" aria-hidden="true">' + plate +
+        jaw('l', [168, 150, 132, 114, 96]) + jaw('r', [21, 39, 57, 75]) + '</svg>';
+    };
+  })();
+
+  function startTrapFx(info) {
+    trapFx = { r: info.r, c: info.c, type: info.type, color: info.color, start: Date.now() };
+    setTimeout(function () { boardEl.classList.add('trap-shake'); }, 1000);
+    setTimeout(function () { boardEl.classList.remove('trap-shake'); }, 1400);
+    setTimeout(function () { trapFx = null; boardEl.querySelectorAll('.trap-fx').forEach(function (n) { n.remove(); }); }, TRAP_FX_MS + 50);
+  }
+
+  function trapFxEl() {
+    const wrap = document.createElement('div');
+    wrap.className = 'trap-fx';
+    wrap.style.setProperty('--el', '-' + (Date.now() - trapFx.start) + 'ms');   // si se redibuja, la animación sigue donde iba
+    const victim = document.createElement('div');
+    victim.className = 'trap-victim';
+    victim.appendChild(pieceImg(trapFx.type, trapFx.color));
+    wrap.appendChild(victim);
+    wrap.insertAdjacentHTML('beforeend', TRAP_SVG('') + '<div class="trap-ring"></div><div class="trap-clac">¡CLAC!</div>');
+    return wrap;
+  }
+
+  // Al acabar la partida: dónde estaban las trampas (abiertas = sin saltar; cerradas = ya saltaron)
+  function trapMarks(r, c) {
+    if (!isArsenal() || state.phase !== 'over') return null;
+    const out = [];
+    (state.traps || []).forEach(function (t) { if (t.r === r && t.c === c) out.push({ t: t, sprung: false }); });
+    (state.sprung || []).forEach(function (t) { if (t.r === r && t.c === c) out.push({ t: t, sprung: true }); });
+    if (!out.length) return null;
+    const m = out[out.length - 1];
+    const el = document.createElement('span');
+    el.className = 'trap-mark ' + (m.sprung ? 'sprung' : 'armed') + (state.board[r][c] ? ' corner' : '');
+    el.title = (m.sprung ? 'Trampa que saltó' : 'Trampa sin saltar') + ' (de ' + Engine.playerName(state, m.t.owner) + ')';
+    el.insertAdjacentHTML('beforeend', TRAP_SVG(m.sprung ? 'closed' : 'open'));
+    const dot = document.createElement('i');
+    dot.className = 'trap-owner ' + (state.playerColor[m.t.owner] === 'w' ? 'w' : 'b');
+    el.appendChild(dot);
+    return el;
+  }
+
   function renderBoard() {
+    const tc = state.trapCount || 0;
+    if (lastTrapCount !== null && tc > lastTrapCount && state.lastTrap) startTrapFx(state.lastTrap);
+    lastTrapCount = tc;
     boardEl.innerHTML = '';
     boardEl.classList.toggle('waiting', online() && !canAct());
     const flipped = isFlipped();
@@ -223,6 +294,8 @@
           sq.appendChild(s);
         }
 
+        const tm = trapMarks(r, c);
+        if (tm) sq.appendChild(tm);
         const p = state.board[r][c];
         if (p) {
           const pe = document.createElement('span');
@@ -230,6 +303,7 @@
           pe.appendChild(pieceImg(p.type, p.color));
           sq.appendChild(pe);
         }
+        if (trapFx && trapFx.r === r && trapFx.c === c && Date.now() - trapFx.start < TRAP_FX_MS) sq.appendChild(trapFxEl());
         boardEl.appendChild(sq);
       }
     }

@@ -118,6 +118,13 @@ assert(mv.indexOf(rc('a3').join(','))>=0 && mv.indexOf(rc('a4').join(',')+'s')>=
 assert(!A.legalMoves(s).some(m=>m.sacrifice&&s.board[m.from[0]][m.from[1]].type==='k'),'el rey no se inmola');
 s.pending[1]=0; assert(A.apply(s,{type:'move',from:rc('a1'),to:rc('a4')},1)); assert.strictEqual(s.board[rc('a4')[0]][rc('a4')[1]],null,'desaparece el pedrolo'); assert.strictEqual(s.board[rc('a1')[0]][rc('a1')[1]],null,'y la torre');
 assert.strictEqual(s.captured.w.filter(t=>t==='r').length,1); assert.strictEqual(s.pending[1],0,'sin robar carta'); assert.strictEqual(s.current,2);
+// Trampas: registro para la animación y para destaparlas al final
+s=empty(); put(s,'a1','r','w'); put(s,'e1','k','w'); put(s,'e8','k','b'); s.hands[1]=['trampa'];
+A.apply(s,{type:'play',card:'trampa',target:{sq:rc('a4')}},1); s.traps.push({r:rc('h5')[0],c:rc('h5')[1],owner:2});
+A.apply(s,{type:'move',from:rc('a1'),to:rc('a4')},1);
+assert.strictEqual(s.trapCount,1); assert.strictEqual(s.lastTrap.type,'r'); assert.strictEqual(s.lastTrap.color,'w'); assert.strictEqual(s.sprung.length,1); assert.strictEqual(s.traps.length,1);
+s=empty(); put(s,'d1','q','w'); put(s,'e1','k','w'); put(s,'d8','k','b'); s.traps.push({r:rc('h5')[0],c:rc('h5')[1],owner:2});
+A.apply(s,{type:'move',from:rc('d1'),to:rc('d8')},1); assert.strictEqual(s.phase,'over'); assert(s.log.some(l=>/Trampas sin saltar: h5/.test(l)),'destapa las trampas al acabar');
 // Un peón no puede romper el pedrolo ni cruzarlo
 s=empty(); put(s,'e1','k','w'); put(s,'a2','p','w'); put(s,'b3','p','w'); put(s,'e8','k','b'); s.hands[1]=['pedrolo'];
 assert(A.apply(s,{type:'play',card:'pedrolo',target:{sq:rc('a3')}},1)); assert(!A.legalMoves(s).some(m=>m.from[0]===rc('a2')[0]&&m.from[1]===rc('a2')[1]),'peón bloqueado'); 
