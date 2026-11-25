@@ -961,6 +961,7 @@
     const p = state.board[r][c];
     if (state.frozen && state.frozen.squares.some(function (s) { return s[0] === r && s[1] === c; })) sq.classList.add('a-frozen-zone');
     if (p && state.frozen && state.frozen.ids.indexOf(p.id) >= 0) sq.classList.add('a-frozen');
+    if (p && state.locked && state.locked.ids.indexOf(p.id) >= 0) sq.classList.add('a-locked');
     if (p && A.isShielded(state, p)) sq.classList.add('a-shielded');
     const pp = A.possessedPos(state);
     if (pp && pp[0] === r && pp[1] === c) sq.classList.add('a-possessed');
@@ -1051,6 +1052,7 @@
     // Efectos activos
     const fx = [];
     if (state.frozen && state.frozen.ids.length) fx.push('❄️ ' + state.frozen.ids.length + (state.frozen.ids.length === 1 ? ' pieza congelada' : ' piezas congeladas') + ' en el turno de ' + Engine.playerName(state, state.frozen.player) + '.');
+    if (state.locked && state.locked.ids.length) fx.push('🔁 Enroque: las dos piezas intercambiadas no pueden moverse este turno.');
     if (state.shields.length) fx.push('🛡️ Hay ' + (state.shields.length === 1 ? 'una pieza protegida' : state.shields.length + ' piezas protegidas') + ' por un Escudo (marco dorado).');
     if (A.possessedPos(state)) fx.push('😈 Posesión: ' + Engine.playerName(state, state.current) + ' controla este turno la pieza marcada en morado.');
     if (state.bloodlust) fx.push('🩸 Sed de sangre: ' + Engine.playerName(state, state.bloodlust) + ' está obligado a capturar en su turno.');

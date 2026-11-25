@@ -726,6 +726,7 @@ button.cap-piece.chosen { border-color: #2f9e62; background: #2c5040; }
 
 /* ---------- Modo Arsenal: tablero ---------- */
 .sq.a-frozen-zone::before { content: ""; position: absolute; inset: 0; background: rgba(120, 190, 255, 0.28); pointer-events: none; }
+.sq.a-locked .piece { opacity: 0.55; filter: grayscale(0.7); }
 .sq.a-frozen .piece { filter: drop-shadow(0 0 4px #7fd0ff) drop-shadow(0 0 2px #7fd0ff); }
 .sq.a-shielded { box-shadow: inset 0 0 0 4px #ffd54a; }
 .sq.a-targetable { cursor: pointer; }

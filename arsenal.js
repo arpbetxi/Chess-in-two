@@ -22,12 +22,12 @@
       text: 'Una pieza tuya no puede ser capturada ni congelada durante el próximo turno rival. Cada jugador empieza con una; no está en el mazo.',
     },
     {
-      id: 'salto', name: 'Salto de caballo', rarity: 'comun', type: 'potenciadora', copies: 5,
+      id: 'salto', name: 'Salto de caballo', rarity: 'rara', type: 'potenciadora', copies: 5,
       text: 'Este turno, una de tus piezas (no el rey) puede moverse además como un caballo.',
     },
     {
       id: 'enroque', name: 'Enroque', rarity: 'comun', type: 'accion', copies: 5,
-      text: 'Dos piezas tuyas intercambian sus casillas.',
+      text: 'Dos piezas tuyas intercambian sus casillas. Ninguna de las dos puede moverse durante este turno.',
     },
     {
       id: 'apuesta', name: 'Apuesta', rarity: 'comun', type: 'accion', copies: 4,
@@ -42,7 +42,7 @@
       text: 'Colocas una trampa en una casilla vacía. Nadie la ve, ni siquiera tú: la primera pieza que la pise, sea de quien sea, queda eliminada. El rey es inmune.',
     },
     {
-      id: 'fantasma', name: 'Fantasma', rarity: 'rara', type: 'potenciadora', copies: 4,
+      id: 'fantasma', name: 'Fantasma', rarity: 'epica', type: 'potenciadora', copies: 4,
       text: 'Este turno, tus piezas pueden atravesar peones de cualquier color (pero no terminar encima de uno salvo para capturarlo).',
     },
     {
@@ -58,11 +58,11 @@
       text: 'Eliges una zona de 3×3: ninguna pieza de esa zona puede moverse durante el próximo turno. El rey es inmune.',
     },
     {
-      id: 'doblepaso', name: 'Doble paso', rarity: 'epica', type: 'potenciadora', copies: 2,
+      id: 'doblepaso', name: 'Doble paso', rarity: 'rara', type: 'potenciadora', copies: 2,
       text: 'Haces dos movimientos este turno. El segundo también puede capturar, pero nunca al rey.',
     },
     {
-      id: 'posesion', name: 'Posesión demoníaca', rarity: 'epica', type: 'accion', copies: 1,
+      id: 'posesion', name: 'Posesión demoníaca', rarity: 'rara', type: 'accion', copies: 1,
       text: 'Eliges una pieza rival (no el rey) y durante este turno la controlas tú: en tu movimiento puedes moverla como si fuera tuya, incluso capturando piezas de su propio bando (nunca al rey). Sigue siendo del rival.',
     },
   ];

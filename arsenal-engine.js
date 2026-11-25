@@ -95,6 +95,7 @@
       movesThisTurn: 0,
       endAfter: false,
       shields: [],                      // { id, owner }: piezas protegidas durante el turno rival
+      locked: null,                     // { ids, player }: piezas enrocadas, no se mueven en el turno de `player`
       frozen: null,                     // { ids, player, squares }: piezas congeladas en el turno de `player`
       possessed: null,                  // { id, player }: pieza rival que `player` controla este turno (Posesión)
       traps: [],                        // { r, c, owner }: ocultas para todos
@@ -127,7 +128,8 @@
 
   // ---------- Movimientos ----------
   function isFrozen(state, p, piece) {
-    return !!(state.frozen && state.frozen.player === p && state.frozen.ids.indexOf(piece.id) >= 0);
+    return !!((state.frozen && state.frozen.player === p && state.frozen.ids.indexOf(piece.id) >= 0) ||
+      (state.locked && state.locked.player === p && state.locked.ids.indexOf(piece.id) >= 0));
   }
   function isShielded(state, piece) {
     return state.shields.some(function (s) { return s.id === piece.id; });
@@ -381,6 +383,7 @@
     const P = state.current;
     if (state.bloodlust === P) state.bloodlust = null;
     if (state.frozen && state.frozen.player === P) state.frozen = null;
+    if (state.locked && state.locked.player === P) state.locked = null;
     if (state.possessed && state.possessed.player === P) state.possessed = null;
     state.shields = state.shields.filter(function (s) { return s.owner === P; });
     if (state.ep && state.ep.player !== P) state.ep = null;
@@ -610,8 +613,9 @@
         b[t.a[0]][t.a[1]] = pb;
         b[t.b[0]][t.b[1]] = pa;
         pa.moved = true; pb.moved = true;
+        state.locked = { ids: [pa.id, pb.id], player: P };   // las dos piezas enrocadas no se mueven este turno
         state.lastMove = { from: t.a, to: t.b };
-        log(state, '🔁 Intercambian su sitio el ' + PIECE_NAMES[pa.type] + ' de ' + sq(t.a[0], t.a[1]) + ' y el ' + PIECE_NAMES[pb.type] + ' de ' + sq(t.b[0], t.b[1]) + '.');
+        log(state, '🔁 Intercambian su sitio el ' + PIECE_NAMES[pa.type] + ' de ' + sq(t.a[0], t.a[1]) + ' y el ' + PIECE_NAMES[pb.type] + ' de ' + sq(t.b[0], t.b[1]) + ' (no podrán moverse este turno).');
         checkStuck(state);              // después de la carta, el jugador mueve
         return true;
       }

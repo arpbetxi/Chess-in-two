@@ -98,6 +98,14 @@ const pm=A.legalMoves(s).filter(m=>m.possessed).map(m=>m.to.join()); console.log
 assert(pm.includes(rc('c6').join()) && pm.includes(rc('c5').join()) && pm.includes(rc('d6').join()),'pawn forward + capture own bishop');
 // Posesión y no mover: se puede mover una pieza propia
 assert(A.apply(s,{type:'move',from:rc('e1'),to:rc('e2')},1)); assert.strictEqual(s.current,2);
+// Enroque: las dos piezas intercambiadas no pueden moverse ese turno (pero sí el resto, y el turno siguiente sí)
+s=empty(); put(s,'e1','k','w'); put(s,'a1','r','w'); put(s,'d4','q','w'); put(s,'e8','k','b');
+s.hands[1]=['enroque'];
+assert(A.apply(s,{type:'play',card:'enroque',target:{a:rc('a1'),b:rc('d4')}},1)); assert.strictEqual(s.current,1,'tras la carta aún mueves');
+assert(!A.legalMoves(s).some(m=>(m.from[0]===rc('a1')[0]&&m.from[1]===rc('a1')[1])||(m.from[0]===rc('d4')[0]&&m.from[1]===rc('d4')[1])),'las piezas enrocadas no se mueven');
+assert(A.legalMoves(s).some(m=>m.from[0]===rc('e1')[0]&&m.from[1]===rc('e1')[1]),'el resto sí');
+assert(A.apply(s,{type:'move',from:rc('e1'),to:rc('e2')},1)); assert.strictEqual(s.locked,null,'se libera al acabar el turno');
+// Rarezas tras el reequilibrado
 // Ahogado tras usar carta = tablas
 s=empty(); put(s,'a1','k','w'); put(s,'a2','p','w'); put(s,'b2','p','w'); put(s,'b1','b','w'); put(s,'c2','p','w'); put(s,'a3','p','b'); put(s,'b3','p','b'); put(s,'c3','p','b'); put(s,'h8','k','b');
 for (const q of ['a3','b3','c3']) s.shields.push({id:s.board[rc(q)[0]][rc(q)[1]].id, owner:2});
